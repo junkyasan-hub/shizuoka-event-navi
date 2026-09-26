@@ -74,13 +74,25 @@ Google検索ツールを使用して、以下のイベント情報が【静岡�
 必ず純粋なJSONオブジェクトのみを出力してください。テキスト注釈やマークダウンブロックは含めないでください。
 """
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                tools=[{"google_search": {}}]
-            )
-        )
+        # Gemini 3.5 Flash-lite を最優先で使用し、必要に応じてフォールバック
+        model_candidates = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
+        response = None
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        tools=[{"google_search": {}}]
+                    )
+                )
+                if response:
+                    break
+            except Exception as em:
+                logger.warning(f"モデル [{model_name}] での呼び出し失敗、次候補を試行します: {em}")
+
+        if not response:
+            raise RuntimeError("すべてのモデル候補での呼び出しに失敗しました。")
 
         text = response.text.strip()
         if text.startswith("```"):
