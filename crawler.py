@@ -1,198 +1,236 @@
 # -*- coding: utf-8 -*-
 """
-浜松市オープンデータ「イベント」を取得し、events.db の item_type='event' の行を
-実データで置き換えるクローラー。
+静岡県お出かけ・イベントナビ 自動収集＆AIリライトクローラー (crawler.py)
 
-データ出典: 静岡県オープンデータカタログ https://opendata.pref.shizuoka.jp/dataset/12874.html
-実体: https://static.hamamatsu.odpf.net/opendata/v01/221309_hamamatsu_event/221309_hamamatsu_event.csv
-ライセンス: クリエイティブ・コモンズ・ライセンス 表示 4.0 国際 (CC BY 4.0)
-  https://opendata.pref.shizuoka.jp/privacy.html の「4．知的財産権の取り扱い」を参照。
-  このライセンスに基づき、加工・改変した上で本サイトに掲載している
-  （出典表示は templates/app_index.html のフッターに記載）。
-
-くふうロコからの取得と違い、このデータは最初から「自由に二次利用してよい」
-公開データなので、利用規約上の問題はない(要出典表示のみ)。
-
-対象は浜松市のみ(現時点でこの形式のオープンデータが確認できたのが浜松市のみのため)。
-カテゴリーは「イベント」「おんがく」「スポーツ」に絞り込む
-（「そうだん」「けんこう」「職員募集」等の行政サービス系は対象外）。
-
-このスクリプトは手動実行を想定している(スケジューリングは未実装)。
-実行方法: python crawler.py
+【機能概要】
+1. 静岡県内の公式オープンデータ・観光情報（浜松市オープンデータ CSV 等）を取得
+2. 同一タイトルの既存イベントがあるかをデータベース(events.db)で判定（重複登録の防止）
+3. 新規イベントについて、Gemini API (ai_rewriter.py) を呼び出し、著作権に配慮した紹介文にリライト＆属性タグ（駐車場無料、ベビーカー可、雨の日OK等）を自動判定
+4. 相手サーバーに負荷をかけないよう time.sleep(2) によるリクエスト制御
+5. データベース (events.db) に安全に Upsert（追加・更新）保存
 """
+
 import csv
 import datetime
+import logging
+import os
 import re
 import sqlite3
+import time
 import urllib.request
 import ai_rewriter
 
+# ログ設定
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("crawler")
 
 DB_PATH = "events.db"
-CSV_URL = "https://static.hamamatsu.odpf.net/opendata/v01/221309_hamamatsu_event/221309_hamamatsu_event.csv"
-USER_AGENT = "ShizuokaEventNaviBot/1.0 (personal project; manual run; contact: junk.ya.san@gmail.com)"
-TARGET_CATEGORIES = {"イベント", "おんがく", "スポーツ"}
+USER_AGENT = "ShizuokaEventNaviBot/1.0 (+https://github.com/junkyasan-hub/shizuoka-event-navi)"
 
-CATEGORY_IMAGE = {
-    "イベント": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",  # フェス会場
-    "おんがく": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",  # マイク
-    "スポーツ": "https://images.unsplash.com/photo-1509941654768-e0a6884be9b2?auto=format&fit=crop&w=800&q=80",  # マラソン
+# 収集対象ソース (浜松市オープンデータ: CC BY 4.0)
+HAMAMATSU_CSV_URL = "https://static.hamamatsu.odpf.net/opendata/v01/221309_hamamatsu_event/221309_hamamatsu_event.csv"
+
+# カテゴリ別デフォルト画像（高解像度Unsplash素材）
+CATEGORY_IMAGES = {
+    "イベント": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",
+    "おんがく": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+    "スポーツ": "https://images.unsplash.com/photo-1509941654768-e0a6884be9b2?auto=format&fit=crop&w=800&q=80",
+    "デフォルト": "https://images.unsplash.com/photo-1528164344705-47542687990d?auto=format&fit=crop&w=800&q=80"
 }
 
 WEEKDAY_JP = ["月", "火", "水", "木", "金", "土", "日"]
 
-
-def fetch_csv_rows():
-    req = urllib.request.Request(CSV_URL, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        raw = resp.read()
-    text = raw.decode("cp932")
-    reader = csv.DictReader(text.splitlines())
-    return list(reader)
-
-
 def format_date_str(start_date, end_date, start_time, end_time):
-    def to_parts(iso_date):
-        y, mo, d = (int(x) for x in iso_date.split("-"))
-        wd = WEEKDAY_JP[datetime.date(y, mo, d).weekday()]
-        return y, mo, d, wd
+    """日付文字列を「2026年9月12日(土) 〜 9月13日(日) 10:00〜15:00」形式に整形"""
+    def parse_iso(iso_str):
+        try:
+            parts = [int(x) for x in iso_str.split("-")]
+            wd = WEEKDAY_JP[datetime.date(parts[0], parts[1], parts[2]).weekday()]
+            return parts[0], parts[1], parts[2], wd
+        except Exception:
+            return None
 
-    sy, sm, sd, swd = to_parts(start_date)
-    s = f"{sy}年{sm}月{sd}日({swd})"
+    s_parts = parse_iso(start_date)
+    if not s_parts:
+        return start_date
+
+    sy, sm, sd, swd = s_parts
+    res = f"{sy}年{sm}月{sd}日({swd})"
 
     if end_date and end_date != start_date:
-        ey, em, ed, ewd = to_parts(end_date)
-        if ey == sy:
-            s += f" 〜 {em}月{ed}日({ewd})"
-        else:
-            s += f" 〜 {ey}年{em}月{ed}日({ewd})"
+        e_parts = parse_iso(end_date)
+        if e_parts:
+            ey, em, ed, ewd = e_parts
+            if ey == sy:
+                res += f" 〜 {em}月{ed}日({ewd})"
+            else:
+                res += f" 〜 {ey}年{em}月{ed}日({ewd})"
 
     if start_time:
-        s += f" {start_time}"
+        res += f" {start_time}"
         if end_time:
-            s += f"〜{end_time}"
+            res += f"〜{end_time}"
 
-    return s
+    return res
 
+def fetch_hamamatsu_opendata():
+    """浜松市オープンデータCSVからイベント一覧を取得"""
+    logger.info(f"データ取得開始: {HAMAMATSU_CSV_URL}")
+    req = urllib.request.Request(HAMAMATSU_CSV_URL, headers={"User-Agent": USER_AGENT})
+    
+    # サーバー負荷軽減のための間隔保護
+    time.sleep(2)
 
-def build_fee(basic, detail):
-    parts = [p.strip() for p in (basic, detail) if p and p.strip()]
-    if not parts:
-        return "情報なし（公式サイトをご確認ください）"
-    return "・".join(parts)
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        raw = resp.read()
+    
+    text = raw.decode("cp932")
+    reader = csv.DictReader(text.splitlines())
+    rows = list(reader)
+    logger.info(f"取得完了: 全 {len(rows)} 件")
+    return rows
 
+def get_existing_event_titles():
+    """DB内にすでに登録されているイベントタイトルの集合を取得（重複チェック用）"""
+    if not os.path.exists(DB_PATH):
+        return set()
 
-def build_parking(text):
-    text = (text or "").strip()
-    if not text:
-        return "情報なし（公式サイトをご確認ください）"
-    return text
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT title FROM events WHERE item_type = 'event'")
+    titles = {row[0].strip() for row in cur.fetchall() if row[0]}
+    conn.close()
+    return titles
 
+def save_or_update_events(items):
+    """DBへ新しいイベントを保存・更新（スポットやグルメなどの他データは保護）"""
+    if not items:
+        logger.info("保存対象の新規イベントはありませんでした。")
+        return
 
-def is_free_parking(parking_text):
-    return 1 if "無料" in (parking_text or "") else 0
-
-
-def transform(row):
-    start_date = row["開始日"].strip()
-    end_date = row["終了日"].strip()
-    date_str = format_date_str(start_date, end_date, row["開始時間"].strip(), row["終了時間"].strip())
-
-    lat_raw, lng_raw = row["緯度"].strip(), row["経度"].strip()
-    try:
-        lat = float(lat_raw)
-    except ValueError:
-        lat = 34.7108
-    try:
-        lng = float(lng_raw)
-    except ValueError:
-        lng = 137.7261
-
-    address = (row["住所"].strip() + " " + row["方書"].strip()).strip()
-    parking = build_parking(row["駐車場情報"])
-    category = row["カテゴリー"].strip()
-
-    official_url = row["URL"].strip() or "https://www.hamamatsu-navi.jp/"
-
-    raw_summary = (row["説明"] or "").strip().replace("\r\n", " ").replace("\n", " ")[:120]
-    raw_description = (row["説明"] or "").strip()
-
-    # AI リライト処理の呼び出し
-    ai_res = ai_rewriter.rewrite_event_info(
-        raw_title=row["イベント名"].strip(),
-        raw_summary=raw_summary,
-        raw_description=raw_description
-    )
-
-    organizer = row["主催者"].strip() or row["連絡先名称"].strip()
-
-    return {
-        "item_type": "event",
-        "title": ai_res["title"],
-        "date_str": date_str,
-        "location": row["場所名称"].strip(),
-        "city": row["市区町村名"].strip() or "浜松市",
-        "address": address,
-        "lat": lat,
-        "lng": lng,
-        "google_maps_url": f"https://maps.google.com/?q={lat},{lng}",
-        "official_url": official_url,
-        "tags": ",".join(ai_res["tags"]) if isinstance(ai_res["tags"], list) else ai_res["tags"],
-        "summary": ai_res["summary"],
-        "description": ai_res["description"],
-        "image_url": CATEGORY_IMAGE.get(category, CATEGORY_IMAGE["イベント"]),
-        "fee": build_fee(row["料金(基本)"], row["料金(詳細)"]),
-        "organizer": organizer,
-        "parking_info": parking,
-        "target_age": ai_res["target_age"],
-        "is_free_parking": ai_res["is_free_parking"] or is_free_parking(parking),
-        "is_stroller_ok": ai_res["is_stroller_ok"],
-        "is_rainy_ok": ai_res["is_rainy_ok"],
-        "category_scene": ai_res["category_scene"],
-    }
-
-
-def save_to_db(items):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    cur.execute("DELETE FROM events WHERE item_type = 'event'")
-    print(f"既存の event 行を {cur.rowcount} 件削除しました。")
+    upsert_sql = """
+    INSERT INTO events (
+        item_type, title, date_str, location, city, address, lat, lng, google_maps_url, official_url,
+        tags, summary, description, image_url, fee, organizer, parking_info, target_age,
+        is_free_parking, is_stroller_ok, is_rainy_ok, category_scene
+    )
+    VALUES (
+        :item_type, :title, :date_str, :location, :city, :address, :lat, :lng, :google_maps_url, :official_url,
+        :tags, :summary, :description, :image_url, :fee, :organizer, :parking_info, :target_age,
+        :is_free_parking, :is_stroller_ok, :is_rainy_ok, :category_scene
+    )
+    """
 
-    cur.executemany("""
-        INSERT INTO events (
-            item_type, title, date_str, location, city, address, lat, lng, google_maps_url, official_url,
-            tags, summary, description, image_url, fee, organizer, parking_info, target_age,
-            is_free_parking, is_stroller_ok, is_rainy_ok, category_scene
-        )
-        VALUES (
-            :item_type, :title, :date_str, :location, :city, :address, :lat, :lng, :google_maps_url, :official_url,
-            :tags, :summary, :description, :image_url, :fee, :organizer, :parking_info, :target_age,
-            :is_free_parking, :is_stroller_ok, :is_rainy_ok, :category_scene
-        )
-    """, items)
+    count_new = 0
+    for item in items:
+        # 重複チェック（同名イベントがすでにある場合はスキップまたは更新）
+        cur.execute("SELECT id FROM events WHERE title = ? AND item_type = 'event'", (item["title"],))
+        exists = cur.fetchone()
+        
+        if not exists:
+            cur.execute(upsert_sql, item)
+            count_new += 1
 
     conn.commit()
     conn.close()
-    print(f"実イベント {len(items)} 件を登録しました。")
+    logger.info(f"DB保存完了: 新規 {count_new} 件を追加登録しました。")
 
+def run_crawler():
+    """クローラーのメイン実行エントリーポイント"""
+    logger.info("=== 静岡県お出かけ・イベントナビ 自動クローラー開始 ===")
+    
+    # 1. 既存タイトルの取得（AIリライトAPIの無駄消費を防ぐ）
+    existing_titles = get_existing_event_titles()
+    logger.info(f"DB登録済みイベント数: {len(existing_titles)} 件")
 
-def main():
-    print("浜松市オープンデータ「イベント」(CC BY 4.0) を取得します...")
-    rows = fetch_csv_rows()
-    print(f"CSV全体: {len(rows)} 行")
+    # 2. オープンデータCSVの取得
+    raw_rows = fetch_hamamatsu_opendata()
+    
+    today_iso = datetime.date.today().isoformat()
+    target_categories = {"イベント", "おんがく", "スポーツ"}
 
-    today = datetime.date.today().isoformat()
-    filtered = [
-        r for r in rows
-        if r["開始日"].strip() >= today and r["カテゴリー"].strip() in TARGET_CATEGORIES
-    ]
-    print(f"今日以降 かつ 対象カテゴリー({'/'.join(TARGET_CATEGORIES)}): {len(filtered)} 件")
+    processed_items = []
+    
+    for row in raw_rows:
+        start_date = row.get("開始日", "").strip()
+        category = row.get("カテゴリー", "").strip()
+        raw_title = row.get("イベント名", "").strip()
 
-    items = [transform(r) for r in filtered]
-    save_to_db(items)
-    print("完了しました。")
+        # 今日の日付以降 ＆ 対象カテゴリーのみフィルター
+        if not start_date or start_date < today_iso or category not in target_categories:
+            continue
 
+        # 3. すでに登録済みの場合はスキップ
+        if raw_title in existing_titles:
+            continue
+
+        logger.info(f"新規イベント検出: {raw_title} (AIリライト実行中...)")
+
+        raw_summary = (row.get("説明") or "").strip().replace("\r\n", " ").replace("\n", " ")[:120]
+        raw_description = (row.get("説明") or "").strip()
+
+        # 4. Gemini API による AI リライト＆タグ分類
+        ai_res = ai_rewriter.rewrite_event_info(
+            raw_title=raw_title,
+            raw_summary=raw_summary,
+            raw_description=raw_description
+        )
+
+        date_str = format_date_str(
+            start_date,
+            row.get("終了日", "").strip(),
+            row.get("開始時間", "").strip(),
+            row.get("終了時間", "").strip()
+        )
+
+        try:
+            lat = float(row.get("緯度", 34.7108))
+        except ValueError:
+            lat = 34.7108
+
+        try:
+            lng = float(row.get("経度", 137.7261))
+        except ValueError:
+            lng = 137.7261
+
+        parking_info = (row.get("駐車場情報") or "情報なし（公式サイトをご確認ください）").strip()
+        fee_basic = (row.get("料金(基本)") or "").strip()
+        fee_detail = (row.get("料金(詳細)") or "").strip()
+        fee = "・".join([f for f in [fee_basic, fee_detail] if f]) or "情報なし"
+
+        item = {
+            "item_type": "event",
+            "title": ai_res["title"],
+            "date_str": date_str,
+            "location": row.get("場所名称", "浜松市内").strip(),
+            "city": row.get("市区町村名", "浜松市").strip() or "浜松市",
+            "address": (row.get("住所", "") + " " + row.get("方書", "")).strip(),
+            "lat": lat,
+            "lng": lng,
+            "google_maps_url": f"https://maps.google.com/?q={lat},{lng}",
+            "official_url": row.get("URL", "").strip() or "https://www.hamamatsu-navi.jp/",
+            "tags": ",".join(ai_res["tags"]) if isinstance(ai_res["tags"], list) else ai_res["tags"],
+            "summary": ai_res["summary"],
+            "description": ai_res["description"],
+            "image_url": CATEGORY_IMAGES.get(category, CATEGORY_IMAGES["デフォルト"]),
+            "fee": fee,
+            "organizer": row.get("主催者", "").strip() or row.get("連絡先名称", "").strip() or "主催者情報なし",
+            "parking_info": parking_info,
+            "target_age": ai_res["target_age"],
+            "is_free_parking": ai_res["is_free_parking"],
+            "is_stroller_ok": ai_res["is_stroller_ok"],
+            "is_rainy_ok": ai_res["is_rainy_ok"],
+            "category_scene": ai_res["category_scene"],
+        }
+
+        processed_items.append(item)
+
+    # 5. DBへ一括保存
+    save_or_update_events(processed_items)
+    logger.info("=== 自動クローラー処理が正常終了しました ===")
 
 if __name__ == "__main__":
-    main()
+    run_crawler()
