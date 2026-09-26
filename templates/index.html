@@ -79,15 +79,47 @@
                     </h2>
                 </div>
 
-                <!-- Date Filter -->
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 開催日で検索</label>
-                    <input type="date" id="dateInput" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <button id="clearDateBtn" class="text-xs font-semibold text-sky-600 hover:underline hidden">日付指定をクリア</button>
+                <!-- Date Range Filter (期間指定検索) -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 開催期間で検索</label>
+                        <span id="activePresetBadge" class="text-[10px] font-extrabold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100">今日から1週間</span>
+                    </div>
+
+                    <!-- Quick Preset Buttons -->
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button type="button" data-preset="1week" class="date-preset-btn px-2 py-1.5 bg-sky-600 text-white rounded-xl text-xs font-bold text-center transition-all shadow-sm">
+                            今日から1週間
+                        </button>
+                        <button type="button" data-preset="weekend" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
+                            今週末
+                        </button>
+                        <button type="button" data-preset="1month" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
+                            今月
+                        </button>
+                        <button type="button" data-preset="all" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
+                            全期間 (解除)
+                        </button>
+                    </div>
+
+                    <!-- Start & End Date Inputs -->
+                    <div class="space-y-2 pt-1">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] font-semibold text-slate-500 block mb-1">開始日</label>
+                                <input type="date" id="startDateInput" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-semibold text-slate-500 block mb-1">終了日</label>
+                                <input type="date" id="endDateInput" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            </div>
+                        </div>
+                        <button id="clearDateBtn" class="text-xs font-semibold text-sky-600 hover:underline inline-block pt-1">期間指定を全解除</button>
+                    </div>
                 </div>
 
                 <!-- Feature Checkboxes -->
-                <div class="space-y-3">
+                <div class="space-y-3 pt-3 border-t border-slate-100">
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">機能・サービス</label>
                     
                     <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
@@ -188,6 +220,8 @@
                      data-location="{{ event.location }}"
                      data-tags="{{ event.tags }}"
                      data-date="{{ event.date_str }}"
+                     data-start-date="{{ event.start_iso }}"
+                     data-end-date="{{ event.end_iso }}"
                      data-parking="{{ event.is_free_parking }}"
                      data-stroller="{{ event.is_stroller_ok }}"
                      data-rainy="{{ event.is_rainy_ok }}"
@@ -284,7 +318,7 @@
             <div id="noResults" class="hidden bg-white rounded-2xl p-12 text-center border border-slate-200 space-y-3">
                 <div class="text-4xl">🔍</div>
                 <h3 class="text-base font-bold text-slate-900">該当するお出かけ情報が見つかりませんでした</h3>
-                <p class="text-xs text-slate-500">条件を緩和するか、別のキーワード・日付で検索してみてください。</p>
+                <p class="text-xs text-slate-500">期間を広げるか、別のキーワード・エリアで検索してみてください。</p>
             </div>
 
         </main>
@@ -316,14 +350,29 @@
     let currentScene = 'all';
     let currentTag = 'all';
 
+    function formatISO(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function addDays(d, days) {
+        const res = new Date(d);
+        res.setDate(res.getDate() + days);
+        return res;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const eventsGrid = document.getElementById('eventsGrid');
         const calendarView = document.getElementById('calendarView');
         const viewGridBtn = document.getElementById('viewGridBtn');
         const viewCalendarBtn = document.getElementById('viewCalendarBtn');
         const searchInput = document.getElementById('searchInput');
-        const dateInput = document.getElementById('dateInput');
+        const startDateInput = document.getElementById('startDateInput');
+        const endDateInput = document.getElementById('endDateInput');
         const clearDateBtn = document.getElementById('clearDateBtn');
+        const activePresetBadge = document.getElementById('activePresetBadge');
         const citySelect = document.getElementById('citySelect');
         const checkFreeParking = document.getElementById('checkFreeParking');
         const checkStroller = document.getElementById('checkStroller');
@@ -338,6 +387,54 @@
         const typeButtons = document.querySelectorAll('.cat-tab-btn');
         const sceneButtons = document.querySelectorAll('.scene-pill-btn');
         const tagButtons = document.querySelectorAll('.tag-btn');
+        const presetButtons = document.querySelectorAll('.date-preset-btn');
+
+        // ベースとなる基準日付の決定（現在日付）
+        let baseToday = new Date();
+        // 開発データが2026年中心の場合でも基準日を適切に維持
+        if (baseToday.getFullYear() < 2026) {
+            baseToday = new Date(2026, 8, 27); // 2026年9月27日
+        }
+
+        // 初期状態で「今日から1週間」を自動セット
+        setPreset('1week');
+
+        function setPreset(presetType) {
+            presetButtons.forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white', 'shadow-sm');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+
+            const activeBtn = Array.from(presetButtons).find(b => b.dataset.preset === presetType);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+                activeBtn.classList.add('bg-sky-600', 'text-white', 'shadow-sm');
+            }
+
+            if (presetType === '1week') {
+                startDateInput.value = formatISO(baseToday);
+                endDateInput.value = formatISO(addDays(baseToday, 7));
+                activePresetBadge.textContent = '今日から1週間';
+            } else if (presetType === 'weekend') {
+                // 次の土曜日と日曜日
+                const day = baseToday.getDay();
+                const diffToSat = (6 - day + 7) % 7;
+                const sat = addDays(baseToday, diffToSat);
+                const sun = addDays(sat, 1);
+                startDateInput.value = formatISO(sat);
+                endDateInput.value = formatISO(sun);
+                activePresetBadge.textContent = '今週末';
+            } else if (presetType === '1month') {
+                startDateInput.value = formatISO(baseToday);
+                endDateInput.value = formatISO(addDays(baseToday, 30));
+                activePresetBadge.textContent = '今月(30日間)';
+            } else if (presetType === 'all') {
+                startDateInput.value = '';
+                endDateInput.value = '';
+                activePresetBadge.textContent = '全期間';
+            }
+            filterEvents();
+        }
 
         // Mobile Sidebar Toggle
         mobileSidebarToggle.addEventListener('click', () => {
@@ -347,13 +444,14 @@
         // Filter Function
         function filterEvents() {
             const query = searchInput.value.toLowerCase().trim();
-            const selectedDate = dateInput.value;
+            const startVal = startDateInput.value;
+            const endVal = endDateInput.value;
             const selectedCity = citySelect.value;
             const wantParking = checkFreeParking.checked;
             const wantStroller = checkStroller.checked;
             const wantRainy = checkRainy.checked;
 
-            if (selectedDate) {
+            if (startVal || endVal) {
                 clearDateBtn.classList.remove('hidden');
             } else {
                 clearDateBtn.classList.add('hidden');
@@ -368,7 +466,8 @@
                 const summary = card.dataset.summary.toLowerCase();
                 const location = card.dataset.location.toLowerCase();
                 const tags = card.dataset.tags.toLowerCase();
-                const dateStr = card.dataset.date;
+                const cardStart = card.dataset.startDate || '1970-01-01';
+                const cardEnd = card.dataset.endDate || '2099-12-31';
                 const parking = card.dataset.parking === '1';
                 const stroller = card.dataset.stroller === '1';
                 const rainy = card.dataset.rainy === '1';
@@ -384,9 +483,15 @@
                 const matchesStroller = !wantStroller || stroller;
                 const matchesRainy = !wantRainy || rainy;
 
+                // 期間一致チェック（オーバーラップ判定）
                 let matchesDate = true;
-                if (selectedDate) {
-                    matchesDate = dateStr.includes(selectedDate) || dateStr.includes('通年') || dateStr.includes('常設');
+                if (cardStart !== '1970-01-01') {
+                    if (startVal && cardEnd < startVal) {
+                        matchesDate = false;
+                    }
+                    if (endVal && cardStart > endVal) {
+                        matchesDate = false;
+                    }
                 }
 
                 if (matchesQuery && matchesType && matchesScene && matchesCity && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
@@ -405,22 +510,43 @@
             }
         }
 
+        // Preset Button Handlers
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setPreset(btn.dataset.preset);
+            });
+        });
+
         // Event Listeners for Filters
         searchInput.addEventListener('input', filterEvents);
-        dateInput.addEventListener('change', filterEvents);
+        startDateInput.addEventListener('change', () => {
+            activePresetBadge.textContent = 'カスタム期間';
+            presetButtons.forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            filterEvents();
+        });
+        endDateInput.addEventListener('change', () => {
+            activePresetBadge.textContent = 'カスタム期間';
+            presetButtons.forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            filterEvents();
+        });
+
         citySelect.addEventListener('change', filterEvents);
         checkFreeParking.addEventListener('change', filterEvents);
         checkStroller.addEventListener('change', filterEvents);
         checkRainy.addEventListener('change', filterEvents);
 
         clearDateBtn.addEventListener('click', () => {
-            dateInput.value = '';
-            filterEvents();
+            setPreset('all');
         });
 
         resetAllFilters.addEventListener('click', () => {
             searchInput.value = '';
-            dateInput.value = '';
             citySelect.value = 'all';
             checkFreeParking.checked = false;
             checkStroller.checked = false;
@@ -446,7 +572,7 @@
             });
             tagButtons[0].classList.add('bg-sky-100', 'text-sky-700');
 
-            filterEvents();
+            setPreset('1week');
         });
 
         // Type Buttons
@@ -523,7 +649,7 @@
                 const calendarEl = document.getElementById('fullCalendarContainer');
                 calendarInstance = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
-                    initialDate: '2026-09-09',
+                    initialDate: startDateInput.value || '2026-09-27',
                     locale: 'ja',
                     headerToolbar: {
                         left: 'prev,next today',

@@ -30,6 +30,28 @@ CITY_OFFICIAL_MAP = {
     "裾野市": "https://www.city.susono.shizuoka.jp/"
 }
 
+import re
+
+def parse_event_dates(date_str, item_type='event'):
+    if item_type in ('spot', 'gourmet') or '通年' in date_str or '常設' in date_str:
+        return '1970-01-01', '2099-12-31'
+    dates = re.findall(r'(\d{4})年(\d{1,2})月(\d{1,2})日', date_str)
+    if dates:
+        sy, sm, sd = dates[0]
+        s_iso = f'{sy}-{int(sm):02d}-{int(sd):02d}'
+        if len(dates) > 1:
+            ey, em, ed = dates[1]
+            e_iso = f'{ey}-{int(em):02d}-{int(ed):02d}'
+        else:
+            m_end = re.search(r'〜\s*(\d{1,2})月(\d{1,2})日', date_str)
+            if m_end:
+                em, ed = m_end.groups()
+                e_iso = f'{sy}-{int(em):02d}-{int(ed):02d}'
+            else:
+                e_iso = s_iso
+        return s_iso, e_iso
+    return '1970-01-01', '2099-12-31'
+
 def parse_event_status(date_str):
     if "通年" in date_str or "常設" in date_str:
         return False, "営業中"
@@ -44,6 +66,10 @@ def enrich_item(item):
     is_ended, status_label = parse_event_status(item["date_str"])
     item["is_ended"] = is_ended
     item["status_label"] = status_label
+    
+    start_iso, end_iso = parse_event_dates(item["date_str"], item.get("item_type", "event"))
+    item["start_iso"] = start_iso
+    item["end_iso"] = end_iso
     
     if not item.get("official_url") or "example.com" in item.get("official_url", ""):
         item["official_url"] = CITY_OFFICIAL_MAP.get(item["city"], "https://www.pref.shizuoka.jp/")
