@@ -4,6 +4,9 @@ on:
   schedule:
     # 毎日 午前3時(JST) = 18:00 (UTC) に自動実行
     - cron: '0 18 * * *'
+  push:
+    branches:
+      - main
   workflow_dispatch: # 手動実行ボタン
 
 jobs:
