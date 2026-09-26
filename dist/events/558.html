@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>ウィーン交流コンサート | 静岡県お出かけ・イベントナビ【公式】</title>
+    <meta name="description" content="【内容】元ウィーン・フィルハーモニー管弦楽団バストロンボーン奏者カール・ヤイトラー氏が指揮をとり、ウィーンの音楽をお届けします。【出演・演目など】【曲目】序曲「 開催場所: 浜松市佐久間歴史と民話の郷会館 (浜松市)。開催中・最新お出かけ情報。公式サイトリンク＆マップ付き。">
+    <meta name="keywords" content="静岡県お出かけ・イベントナビ, 静岡 イベント, 静岡 観光, 静岡 グルメ, 駿府城, 浜松まつり, 富士山, 熱海花火, 駐車場無料, ベビーカー可">
+    <meta name="author" content="静岡県お出かけ・イベントナビ">
+
+    <!-- Open Graph / OGP (Facebook, LINE) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="静岡県お出かけ・イベントナビ">
+    <meta property="og:title" content="ウィーン交流コンサート">
+    <meta property="og:description" content="【内容】元ウィーン・フィルハーモニー管弦楽団バストロンボーン奏者カール・ヤイトラー氏が指揮をとり、ウィーンの音楽をお届けします。【出演・演目など】【曲目】序曲「">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&amp;fit=crop&amp;w=800&amp;q=80">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="静岡県お出かけ・イベントナビ">
+    <meta name="twitter:description" content="静岡県内の最新イベント・観光スポット・名物グルメ情報">
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1528164344705-47542687990d?auto=format&fit=crop&w=1200&q=80">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+    
+<!-- Leaflet CSS for Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Schema.org JSON-LD Structured Data (SEO) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "ウィーン交流コンサート",
+  "description": "【内容】元ウィーン・フィルハーモニー管弦楽団バストロンボーン奏者カール・ヤイトラー氏が指揮をとり、ウィーンの音楽をお届けします。【出演・演目など】【曲目】序曲「",
+  "image": [
+    "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"
+  ],
+  "url": "https://www.city.hamamatsu.shizuoka.jp/sk-kyodo/concert/sakuma_wien.html",
+  "location": {
+    "@type": "Place",
+    "name": "浜松市佐久間歴史と民話の郷会館",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "浜松市",
+      "streetAddress": "浜松市天竜区佐久間町佐久間429-1",
+      "addressCountry": "JP"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 35.09176,
+      "longitude": 137.813648
+    }
+  },
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "organizer": {
+    "@type": "Organization",
+    "name": "さくま国際交流音楽指導講座実行委員会"
+  }
+}
+</script>
+
+</head>
+<body class="flex flex-col min-h-full text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="../index.html" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-sky-600 to-indigo-700 bg-clip-text text-transparent">静岡県お出かけ・イベントナビ</span>
+                        <span class="hidden md:inline-block text-xs font-semibold text-sky-600 ml-2 px-2 py-0.5 bg-sky-50 rounded-full">Shizuoka Guide</span>
+                    </div>
+                </a>
+
+                <!-- Navigation -->
+                <nav class="flex items-center gap-4">
+                    <a href="../index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-sky-600 hover:bg-slate-100 transition-colors">
+                        トップ・一覧
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        
+<!-- Breadcrumb -->
+<div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <nav class="flex items-center text-xs sm:text-sm text-slate-500 gap-2">
+            <a href="../index.html" class="hover:text-sky-600 font-medium">トップ</a>
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-slate-900 font-semibold truncate max-w-xs sm:max-w-md">ウィーン交流コンサート</span>
+        </nav>
+    </div>
+</div>
+
+<!-- Main Detail Section -->
+<article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+    
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Main Content (2 Columns) -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Hero Image Banner -->
+            <div class="relative rounded-3xl overflow-hidden shadow-lg bg-slate-100 aspect-video md:aspect-[16/9]">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="ウィーン交流コンサート" class="w-full h-full object-cover ">
+                <div class="absolute top-4 left-4 flex gap-2">
+                    
+                    <span class="px-3.5 py-1.5 bg-emerald-600/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold rounded-xl shadow">
+                        ✨ 開催中・予定
+                    </span>
+                    
+
+                    <span class="px-3.5 py-1.5 bg-slate-900/80 backdrop-blur-md text-white text-xs sm:text-sm font-semibold rounded-xl shadow">
+                        📍 浜松市
+                    </span>
+                </div>
+            </div>
+
+            <!-- Header Info -->
+            <div>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    
+                    <span class="px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-xs font-semibold border border-sky-100">
+                        #おんがく
+                    </span>
+                    
+                </div>
+                <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 leading-tight mb-4">
+                    ウィーン交流コンサート
+                </h1>
+                <p class="text-base sm:text-lg text-slate-600 leading-relaxed font-medium bg-slate-100/80 p-4 sm:p-6 rounded-2xl border border-slate-200/60">
+                    【内容】元ウィーン・フィルハーモニー管弦楽団バストロンボーン奏者カール・ヤイトラー氏が指揮をとり、ウィーンの音楽をお届けします。【出演・演目など】【曲目】序曲「
+                </p>
+            </div>
+
+            <!-- Description Section -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+                <h2 class="text-xl font-bold text-slate-900 border-l-4 border-sky-500 pl-3">
+                    詳細・見どころ
+                </h2>
+                <div class="text-slate-700 leading-relaxed space-y-4 text-base whitespace-pre-line">
+                    【内容】元ウィーン・フィルハーモニー管弦楽団バストロンボーン奏者カール・ヤイトラー氏が指揮をとり、ウィーンの音楽をお届けします。【出演・演目など】【曲目】序曲「メトゥザレム王子」、佐久間町のための祝賀曲他【指揮】守下武志、カール・ヤイトラー【出演】佐久間吹奏楽クラブ、浜松湖北高校佐久間分校吹奏楽部他【その他】コンサートは2部構成になっています。1部ではお馴染みの日本の曲も演奏されます。
+                </div>
+            </div>
+
+            <!-- Interactive Map Section -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h2 class="text-xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-3 flex items-center gap-2">
+                        🗺️ アクセス・周辺マップ
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        
+                        <a href="https://www.city.hamamatsu.shizuoka.jp/sk-kyodo/concert/sakuma_wien.html" target="_blank" rel="noopener noreferrer" 
+                           class="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1.5">
+                            🌐 公式サイト
+                        </a>
+                        
+                        <a href="https://maps.google.com/?q=浜松市佐久間歴史と民話の郷会館" target="_blank" rel="noopener noreferrer" 
+                           class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1.5">
+                            📍 Google Map
+                        </a>
+                    </div>
+                </div>
+                <div id="detailMap" class="w-full h-80 rounded-2xl border border-slate-200 shadow-inner z-10"></div>
+                <p class="text-xs text-slate-500">📍 住所: 浜松市天竜区佐久間町佐久間429-1</p>
+            </div>
+        </div>
+
+        <!-- Right: Sidebar Information Box (1 Column) -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200/80 sticky top-24 space-y-6">
+                <h3 class="text-lg font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    基本情報
+                </h3>
+
+                <dl class="space-y-4 text-sm">
+                    <!-- Status -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">開催ステータス</dt>
+                        <dd class="text-slate-900 font-semibold">
+                            
+                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-200">
+                                ✨ 開催中・開催予定
+                            </span>
+                            
+                        </dd>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">開催日時・営業時間</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>2026年10月4日(日) 13:30〜16:00</span>
+                        </dd>
+                    </div>
+
+                    <!-- Official Site Link (Key Requirement) -->
+                    
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">公式サイト・関連ページ</dt>
+                        <dd class="text-slate-900 font-semibold flex items-center gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                            </svg>
+                            <a href="https://www.city.hamamatsu.shizuoka.jp/sk-kyodo/concert/sakuma_wien.html" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:text-sky-700 underline truncate">
+                                https://www.city.hamamatsu.shizuoka.jp/sk-kyodo/concert/sakuma_wien.html
+                            </a>
+                        </dd>
+                    </div>
+                    
+
+                    <!-- Location -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">場所・所在地</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>浜松市佐久間歴史と民話の郷会館 (浜松市)</span>
+                        </dd>
+                    </div>
+
+                    <!-- Fee -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">料金・利用料</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>入場無料</span>
+                        </dd>
+                    </div>
+
+                    <!-- Organizer -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">主催・お問合せ</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span>さくま国際交流音楽指導講座実行委員会</span>
+                        </dd>
+                    </div>
+                </dl>
+
+                <div class="pt-4 border-t border-slate-100 space-y-2">
+                    
+                    <a href="https://www.city.hamamatsu.shizuoka.jp/sk-kyodo/concert/sakuma_wien.html" target="_blank" rel="noopener noreferrer" 
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow-md transition-colors text-sm">
+                        🌐 公式サイトを見る ↗
+                    </a>
+                    
+                    <a href="https://maps.google.com/?q=浜松市佐久間歴史と民話の郷会館" target="_blank" rel="noopener noreferrer" 
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-md transition-colors text-sm">
+                        📍 Google Mapで位置を確認
+                    </a>
+                    <a href="../index.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors text-sm">
+                        一覧に戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</article>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 mt-16 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-3">静岡県お出かけ・イベントナビ</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        静岡県内のイベント、定番観光スポット、ご当地グルメ情報を自動収集し、公式サイトリンク＆位置情報（Google Map）を明記して発信中。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-3">主要エリア</h4>
+                    <div class="flex flex-wrap gap-2 text-sm">
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">静岡市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">浜松市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">沼津市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">熱海市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">伊東市</span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-3">機能・特長</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        公式サイトURL自動収集 / Schema.org JSON-LD 構造化データ対応 / リアルタイム「終了」判定ソート機能
+                    </p>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
+                &copy; 2026 静岡県お出かけ・イベントナビ All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const lat = 35.09176;
+        const lng = 137.813648;
+        const title = "ウィーン交流コンサート";
+
+        const map = L.map('detailMap').setView([lat, lng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        L.marker([lat, lng]).addTo(map)
+            .bindPopup(`<b>${title}</b><br><a href="https://maps.google.com/?q=${lat},${lng}" target="_blank">Google Mapで開く</a>`)
+            .openPopup();
+    });
+</script>
+
+</body>
+</html>

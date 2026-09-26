@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>静岡県お出かけ・イベントナビ【公式】| イベント・定番スポット・名物グルメ検索</title>
+    <meta name="description" content="静岡県内の最新イベント、定番観光スポット、ご当地グルメ、駐車場情報、お出かけ情報をリアルタイム配信。最新情報順ソート＆カレンダー表示＆Google Map・公式サイトリンク付き！">
+    <meta name="keywords" content="静岡県お出かけ・イベントナビ, イベントカレンダー, 静岡 イベント, 静岡 観光, 静岡 グルメ, 駿府城, 浜松まつり, 富士山, 駐車場無料, ベビーカー可">
+
+    <!-- Open Graph / OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="静岡県お出かけ・イベントナビ">
+    <meta property="og:title" content="静岡県お出かけ・イベントナビ【公式】">
+    <meta property="og:description" content="静岡県内の最新イベント・定番スポット・グルメをカレンダー表示＆Google Map付きで探せるWebアプリ。">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1752146506745-75d39c869980?auto=format&fit=crop&w=1200&q=80">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS & JS for Map Modal -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- FullCalendar v6 CDN for Calendar View -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        .fc-event { cursor: pointer; border-radius: 6px; font-size: 0.8rem; padding: 2px 4px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-full text-slate-800 antialiased bg-slate-100">
+
+    <!-- Top Sticky Navigation Header -->
+    <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Brand & Search bar -->
+            <div class="flex items-center justify-between h-16 gap-4">
+                <a href="/" class="flex items-center gap-2.5 shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md">
+                        静
+                    </div>
+                    <div>
+                        <span class="text-base sm:text-lg font-black text-slate-900 tracking-tight">静岡県お出かけ・イベントナビ</span>
+                        <span class="hidden md:inline-block text-xs font-semibold text-sky-600 ml-2 px-2 py-0.5 bg-sky-50 rounded-full">最新情報優先表示中</span>
+                    </div>
+                </a>
+
+                <!-- Keyword Search -->
+                <form action="/" method="GET" class="flex-1 max-w-md">
+                    <input type="hidden" name="item_type" value="{{ current_item_type }}">
+                    <input type="hidden" name="scene" value="{{ current_scene }}">
+                    <input type="hidden" name="date" value="{{ current_date }}">
+                    <div class="relative">
+                        <input type="text" name="search" value="{{ search_query }}" placeholder="スポット名・グルメ・エリアで検索..."
+                            class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Mobile Filter Toggle Button -->
+                <button id="mobileFilterBtn" class="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
+                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    絞り込み
+                </button>
+            </div>
+
+            <!-- Main Type Tabs -->
+            <div class="flex items-center gap-2 overflow-x-auto py-2.5 border-t border-slate-100 no-scrollbar">
+                <a href="/?item_type=all&scene={{ current_scene }}&search={{ search_query }}&date={{ current_date }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm {% if current_item_type == 'all' %} bg-sky-600 text-white shadow-sky-500/20 {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    🌟 すべて
+                </a>
+                <a href="/?item_type=event&scene={{ current_scene }}&search={{ search_query }}&date={{ current_date }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm {% if current_item_type == 'event' %} bg-sky-600 text-white shadow-sky-500/20 {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    🎉 イベント
+                </a>
+                <a href="/?item_type=spot&scene={{ current_scene }}&search={{ search_query }}&date={{ current_date }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm {% if current_item_type == 'spot' %} bg-sky-600 text-white shadow-sky-500/20 {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    🏞️ 定番スポット
+                </a>
+                <a href="/?item_type=gourmet&scene={{ current_scene }}&search={{ search_query }}&date={{ current_date }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm {% if current_item_type == 'gourmet' %} bg-sky-600 text-white shadow-sky-500/20 {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    🍜 定番グルメ
+                </a>
+
+                <div class="h-5 w-px bg-slate-300 mx-1"></div>
+
+                <!-- Scene Pills -->
+                <a href="/?item_type={{ current_item_type }}&scene=family&search={{ search_query }}&date={{ current_date }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all {% if current_scene == 'family' %} bg-amber-500 text-white {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    👨‍👩‍👧‍👦 ファミリー向け
+                </a>
+                <a href="/?item_type={{ current_item_type }}&scene=couple&search={{ search_query }}&date={{ current_date }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all {% if current_scene == 'couple' %} bg-rose-500 text-white {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    👩‍❤️‍👨 カップル向け
+                </a>
+                <a href="/?item_type={{ current_item_type }}&scene=rainy&search={{ search_query }}&date={{ current_date }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all {% if current_scene == 'rainy' %} bg-indigo-500 text-white {% else %} bg-slate-100 text-slate-600 hover:bg-slate-200 {% endif %}">
+                    ☔ 雨の日OK
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+            <!-- Sidebar Filters -->
+            <aside id="sidebar" class="hidden lg:block lg:col-span-1">
+                <form action="/" method="GET" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 sticky top-28 space-y-6">
+                    <input type="hidden" name="item_type" value="{{ current_item_type }}">
+                    <input type="hidden" name="scene" value="{{ current_scene }}">
+                    <input type="hidden" name="search" value="{{ search_query }}">
+
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                            </svg>
+                            こだわり条件絞り込み
+                        </h2>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 開催日で検索</label>
+                        <input type="date" name="date" value="{{ current_date }}"
+                            class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        {% if current_date %}
+                        <a href="/?item_type={{ current_item_type }}&scene={{ current_scene }}&search={{ search_query }}"
+                           class="text-xs font-semibold text-sky-600 hover:underline inline-block">日付指定を解除</a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Feature Checkboxes -->
+                    <div class="space-y-3">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">機能・サービス</label>
+                        
+                        <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                            <input type="checkbox" name="free_parking" value="true" {% if free_parking %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span>🚗 駐車場無料</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                            <input type="checkbox" name="stroller_ok" value="true" {% if stroller_ok %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span>👶 ベビーカー可</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                            <input type="checkbox" name="rainy_ok" value="true" {% if rainy_ok %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span>☔ 屋内・雨の日OK</span>
+                        </label>
+                    </div>
+
+                    <!-- City Filter Dropdown -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">エリア選択</label>
+                        <select name="city" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="all" {% if current_city == 'all' %}selected{% endif %}>静岡県内 全エリア</option>
+                            {% for c in cities %}
+                            <option value="{{ c }}" {% if current_city == c %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Submit & Clear Buttons -->
+                    <div class="pt-2 space-y-2">
+                        <button type="submit" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold text-sm shadow-md shadow-sky-500/20 transition-all">
+                            条件を適用する
+                        </button>
+                        <a href="/?item_type={{ current_item_type }}" class="w-full block text-center py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition-all">
+                            条件をリセット
+                        </a>
+                    </div>
+                </form>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="lg:col-span-3 space-y-6">
+                <!-- Result Count Header & View Switcher (Card Grid vs Calendar) -->
+                <div class="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex-wrap gap-3">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-bold text-slate-800">検索結果:</span>
+                        <span class="px-2.5 py-0.5 bg-sky-100 text-sky-800 text-xs font-extrabold rounded-full">{{ events|length }} 件</span>
+                        {% if current_date %}
+                        <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-full">📅 {{ current_date }} のイベント</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Display View Switcher (Card Grid / Calendar) -->
+                    <div class="flex items-center bg-slate-100 p-1 rounded-xl gap-1">
+                        <button id="viewGridBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow bg-white text-sky-600 flex items-center gap-1.5">
+                            📋 カード一覧
+                        </button>
+                        <button id="viewCalendarBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-sky-600 flex items-center gap-1.5">
+                            📅 カレンダー表示
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. Cards Grid Container -->
+                <div id="cardsGridView" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for item in events %}
+                    <article class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between {% if item.is_ended %} opacity-75 bg-slate-50/90 {% endif %}">
+                        <div>
+                            <!-- Card Image & Status Badges -->
+                            <div class="relative h-48 bg-slate-100 overflow-hidden">
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="w-full h-full object-cover {% if item.is_ended %} grayscale-[40%] {% endif %}">
+                                <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                                    {% if item.is_ended %}
+                                    <span class="px-2.5 py-1 bg-slate-800/90 backdrop-blur-md text-slate-200 text-xs font-bold rounded-lg shadow border border-slate-600">
+                                        🔒 終了
+                                    </span>
+                                    {% else %}
+                                    <span class="px-2.5 py-1 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-bold rounded-lg shadow">
+                                        ✨ {{ item.status_label }}
+                                    </span>
+                                    {% endif %}
+
+                                    <span class="px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded-lg shadow">
+                                        📍 {{ item.city }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-5 space-y-3">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="px-2.5 py-1 bg-sky-50 text-sky-700 font-bold rounded-md border border-sky-100/80 flex items-center gap-1">
+                                        👶 {{ item.target_age }}
+                                    </span>
+                                    <span class="{% if item.is_ended %} text-slate-400 {% else %} text-sky-600 {% endif %} font-semibold">{{ item.date_str }}</span>
+                                </div>
+
+                                <h3 class="text-lg font-bold text-slate-900 leading-snug line-clamp-2">
+                                    {% if item.is_ended %}<span class="text-slate-400 font-normal">[終了]</span> {% endif %}{{ item.title }}
+                                </h3>
+
+                                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                    {{ item.summary }}
+                                </p>
+
+                                <div class="p-2.5 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
+                                    <div class="flex items-start gap-1.5 text-slate-700 font-medium">
+                                        <span class="shrink-0 font-bold text-sky-600">🚗 駐車場:</span>
+                                        <span class="text-slate-800">{{ item.parking_info }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 pt-1 border-t border-slate-200/60">
+                                        {% if item.is_free_parking %}
+                                        <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded text-[11px]">✔ 駐車場無料</span>
+                                        {% endif %}
+                                        {% if item.is_stroller_ok %}
+                                        <span class="px-1.5 py-0.5 bg-amber-50 text-amber-700 font-bold rounded text-[11px]">✔ ベビーカー可</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="px-5 pb-5 pt-3 flex items-center justify-between border-t border-slate-100 gap-2">
+                            <div class="flex items-center gap-1.5">
+                                <a href="https://maps.google.com/?q={{ item.location }}" target="_blank" rel="noopener noreferrer" 
+                                   class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200/80 transition-colors">
+                                    📍 地図
+                                </a>
+                                {% if item.official_url %}
+                                <a href="{{ item.official_url }}" target="_blank" rel="noopener noreferrer" 
+                                   class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-xs font-bold border border-sky-200/80 transition-colors">
+                                    🌐 公式
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <button onclick="openModal({{ item.id }}, '{{ item.title }}', '{{ item.location }}', '{{ item.address }}', '{{ item.fee }}', '{{ item.organizer }}', '{{ item.parking_info }}', '{{ item.summary }}', {{ item.lat }}, {{ item.lng }}, {{ 'true' if item.is_ended else 'false' }}, '{{ item.official_url }}')" 
+                                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow {% if item.is_ended %} bg-slate-700 hover:bg-slate-800 text-white {% else %} bg-slate-900 hover:bg-sky-600 text-white {% endif %}">
+                                {% if item.is_ended %}終了アーカイブ{% else %}詳細・地図{% endif %}
+                            </button>
+                        </div>
+                    </article>
+                    {% else %}
+                    <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-slate-200">
+                        <p class="text-base font-bold text-slate-700">該当する情報は見つかりませんでした。</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 2. FullCalendar Canvas Container -->
+                <div id="calendarView" class="hidden bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            📅 静岡県イベントカレンダー
+                        </h3>
+                        <div class="flex items-center gap-3 text-xs font-semibold">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span> イベント</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> スポット</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span> グルメ</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> 終了</span>
+                        </div>
+                    </div>
+                    <div id="fullCalendarContainer" class="min-h-[550px]"></div>
+                </div>
+
+            </main>
+
+        </div>
+    </div>
+
+    <!-- Footer: データ出典表示 -->
+    <footer class="mt-4 py-6 border-t border-slate-200 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-slate-500 leading-relaxed">
+            <p>
+                イベント情報の一部は、静岡県オープンデータカタログで公開されている
+                「<a href="https://opendata.pref.shizuoka.jp/dataset/12874.html" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline">イベント（浜松市）</a>」
+                を加工して利用しています（<a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline">クリエイティブ・コモンズ・ライセンス 表示 4.0 国際</a>）。
+            </p>
+        </div>
+    </footer>
+
+    <!-- Detail & Map Modal -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full z-20">
+                ✕
+            </button>
+            <h3 id="modalTitle" class="text-xl font-bold text-slate-900 pr-8"></h3>
+            
+            <div id="modalContent" class="space-y-3 text-xs sm:text-sm text-slate-700">
+                <!-- Dynamically filled -->
+            </div>
+
+            <!-- Leaflet Interactive Map Canvas -->
+            <div class="space-y-2 pt-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">📍 Google Map・位置情報</span>
+                    <a id="modalGmapsBtn" href="#" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1">
+                        Google Mapで直接開く ↗
+                    </a>
+                </div>
+                <div id="modalMap" class="w-full h-56 rounded-2xl border border-slate-200 shadow-inner z-10"></div>
+            </div>
+
+            <div class="pt-3">
+                <button onclick="closeModal()" class="w-full py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+        const sidebar = document.getElementById('sidebar');
+        const viewGridBtn = document.getElementById('viewGridBtn');
+        const viewCalendarBtn = document.getElementById('viewCalendarBtn');
+        const cardsGridView = document.getElementById('cardsGridView');
+        const calendarView = document.getElementById('calendarView');
+        
+        let leafletMap = null;
+        let leafletMarker = null;
+        let calendarInstance = null;
+
+        const calendarEventsData = {{ calendar_events_json | safe }};
+
+        mobileFilterBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+
+        // View Switcher (Card Grid vs Calendar)
+        viewGridBtn.addEventListener('click', () => {
+            cardsGridView.classList.remove('hidden');
+            calendarView.classList.add('hidden');
+
+            viewGridBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
+            viewGridBtn.classList.remove('text-slate-600');
+            viewCalendarBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
+            viewCalendarBtn.classList.add('text-slate-600');
+        });
+
+        viewCalendarBtn.addEventListener('click', () => {
+            cardsGridView.classList.add('hidden');
+            calendarView.classList.remove('hidden');
+
+            viewCalendarBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
+            viewCalendarBtn.classList.remove('text-slate-600');
+            viewGridBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
+            viewGridBtn.classList.add('text-slate-600');
+
+            if (!calendarInstance) {
+                const calendarEl = document.getElementById('fullCalendarContainer');
+                calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    initialDate: '2026-09-09',
+                    locale: 'ja',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,listMonth'
+                    },
+                    buttonText: {
+                        today: '今日',
+                        month: '月表示',
+                        list: 'リスト'
+                    },
+                    events: calendarEventsData,
+                    eventClick: function(info) {
+                        const props = info.event.extendedProps;
+                        openModal(
+                            props.itemId,
+                            props.title,
+                            props.location,
+                            props.address,
+                            props.fee,
+                            props.organizer,
+                            props.parking,
+                            props.summary,
+                            props.lat,
+                            props.lng,
+                            props.isEnded,
+                            props.officialUrl
+                        );
+                    }
+                });
+                calendarInstance.render();
+            } else {
+                setTimeout(() => { calendarInstance.render(); }, 100);
+            }
+        });
+
+        function openModal(id, title, location, address, fee, organizer, parking, summary, lat, lng, isEnded, officialUrl) {
+            document.getElementById('modalTitle').innerHTML = (isEnded ? '<span class="text-slate-500 font-normal">[終了]</span> ' : '') + title;
+            
+            const gmapsUrl = `https://maps.google.com/?q=${encodeURIComponent(location + ' ' + address)}`;
+            document.getElementById('modalGmapsBtn').href = gmapsUrl;
+
+            document.getElementById('modalContent').innerHTML = `
+                ${isEnded ? '<div class="p-3 bg-amber-50 text-amber-800 rounded-xl text-xs font-bold">⚠️ このイベントは終了しました (アーカイブ情報)</div>' : ''}
+                <div class="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100">
+                    <p><strong>📍 場所:</strong> ${location} (${address || ''})</p>
+                    <p><strong>🎟️ 料金:</strong> ${fee}</p>
+                    <p><strong>🚗 駐車場:</strong> ${parking}</p>
+                    <p><strong>🏢 主催:</strong> ${organizer}</p>
+                    ${officialUrl ? `<p><strong>🌐 公式サイト:</strong> <a href="${officialUrl}" target="_blank" class="text-sky-600 hover:underline font-bold">${officialUrl}</a></p>` : ''}
+                </div>
+                <div class="pt-1">
+                    <p class="font-bold mb-1">概要:</p>
+                    <p class="text-slate-600 leading-relaxed text-xs sm:text-sm">${summary}</p>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+
+            setTimeout(() => {
+                const mapLat = lat || 34.9769;
+                const mapLng = lng || 138.3831;
+
+                if (!leafletMap) {
+                    leafletMap = L.map('modalMap').setView([mapLat, mapLng], 14);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(leafletMap);
+                } else {
+                    leafletMap.setView([mapLat, mapLng], 14);
+                    leafletMap.invalidateSize();
+                }
+
+                if (leafletMarker) {
+                    leafletMap.removeLayer(leafletMarker);
+                }
+
+                leafletMarker = L.marker([mapLat, mapLng]).addTo(leafletMap)
+                    .bindPopup(`<b>${title}</b><br><a href="${gmapsUrl}" target="_blank">Google Mapで開く</a>`)
+                    .openPopup();
+            }, 100);
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

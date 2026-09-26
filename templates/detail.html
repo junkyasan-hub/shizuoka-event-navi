@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}{% if event.is_ended %}[終了] {% endif %}{{ event.title }} | 静岡県お出かけ・イベントナビ【公式】{% endblock %}
+{% block description %}{{ event.summary }} 開催場所: {{ event.location }} ({{ event.city }})。{% if event.is_ended %}このイベントは終了いたしました。{% else %}開催中・最新お出かけ情報。公式サイトリンク＆マップ付き。{% endif %}{% endblock %}
+
+{% block og_title %}{% if event.is_ended %}[終了] {% endif %}{{ event.title }}{% endblock %}
+{% block og_description %}{{ event.summary }}{% endblock %}
+{% block og_image %}{{ event.image_url }}{% endblock %}
+
+{% block head %}
+<!-- Leaflet CSS for Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Schema.org JSON-LD Structured Data (SEO) -->
+<script type="application/ld+json">
+{{ event.json_ld | safe }}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <nav class="flex items-center text-xs sm:text-sm text-slate-500 gap-2">
+            <a href="../index.html" class="hover:text-sky-600 font-medium">トップ</a>
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-slate-900 font-semibold truncate max-w-xs sm:max-w-md">{{ event.title }}</span>
+        </nav>
+    </div>
+</div>
+
+<!-- Main Detail Section -->
+<article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+    {% if event.is_ended %}
+    <!-- Expired Event Notice Banner -->
+    <div class="mb-8 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-2xl flex items-center gap-3 text-amber-800 text-sm font-semibold">
+        <svg class="w-6 h-6 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div>
+            <p class="font-bold">このイベントは終了いたしました (アーカイブ表示中)</p>
+            <p class="text-xs text-amber-700 font-normal mt-0.5">次回の開催情報や最新イベントはトップページよりご覧いただけます。</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Main Content (2 Columns) -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Hero Image Banner -->
+            <div class="relative rounded-3xl overflow-hidden shadow-lg bg-slate-100 aspect-video md:aspect-[16/9]">
+                <img src="{{ event.image_url }}" alt="{{ event.title }}" class="w-full h-full object-cover {% if event.is_ended %} grayscale-[30%] {% endif %}">
+                <div class="absolute top-4 left-4 flex gap-2">
+                    {% if event.is_ended %}
+                    <span class="px-3.5 py-1.5 bg-slate-800/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold rounded-xl shadow">
+                        🔒 終了
+                    </span>
+                    {% else %}
+                    <span class="px-3.5 py-1.5 bg-emerald-600/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold rounded-xl shadow">
+                        ✨ 開催中・予定
+                    </span>
+                    {% endif %}
+
+                    <span class="px-3.5 py-1.5 bg-slate-900/80 backdrop-blur-md text-white text-xs sm:text-sm font-semibold rounded-xl shadow">
+                        📍 {{ event.city }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Header Info -->
+            <div>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    {% for tag in event.tags.split(',') %}
+                    <span class="px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-xs font-semibold border border-sky-100">
+                        #{{ tag.strip() }}
+                    </span>
+                    {% endfor %}
+                </div>
+                <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 leading-tight mb-4">
+                    {% if event.is_ended %}<span class="text-slate-400 font-bold">[終了]</span> {% endif %}{{ event.title }}
+                </h1>
+                <p class="text-base sm:text-lg text-slate-600 leading-relaxed font-medium bg-slate-100/80 p-4 sm:p-6 rounded-2xl border border-slate-200/60">
+                    {{ event.summary }}
+                </p>
+            </div>
+
+            <!-- Description Section -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+                <h2 class="text-xl font-bold text-slate-900 border-l-4 border-sky-500 pl-3">
+                    詳細・見どころ
+                </h2>
+                <div class="text-slate-700 leading-relaxed space-y-4 text-base whitespace-pre-line">
+                    {{ event.description }}
+                </div>
+            </div>
+
+            <!-- Interactive Map Section -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h2 class="text-xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-3 flex items-center gap-2">
+                        🗺️ アクセス・周辺マップ
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        {% if event.official_url %}
+                        <a href="{{ event.official_url }}" target="_blank" rel="noopener noreferrer" 
+                           class="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1.5">
+                            🌐 公式サイト
+                        </a>
+                        {% endif %}
+                        <a href="https://maps.google.com/?q={{ event.location }}" target="_blank" rel="noopener noreferrer" 
+                           class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1.5">
+                            📍 Google Map
+                        </a>
+                    </div>
+                </div>
+                <div id="detailMap" class="w-full h-80 rounded-2xl border border-slate-200 shadow-inner z-10"></div>
+                <p class="text-xs text-slate-500">📍 住所: {{ event.address if event.address else event.location }}</p>
+            </div>
+        </div>
+
+        <!-- Right: Sidebar Information Box (1 Column) -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200/80 sticky top-24 space-y-6">
+                <h3 class="text-lg font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    基本情報
+                </h3>
+
+                <dl class="space-y-4 text-sm">
+                    <!-- Status -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">開催ステータス</dt>
+                        <dd class="text-slate-900 font-semibold">
+                            {% if event.is_ended %}
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold border border-slate-300">
+                                終了済み
+                            </span>
+                            {% else %}
+                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-200">
+                                ✨ 開催中・開催予定
+                            </span>
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">開催日時・営業時間</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>{{ event.date_str }}</span>
+                        </dd>
+                    </div>
+
+                    <!-- Official Site Link (Key Requirement) -->
+                    {% if event.official_url %}
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">公式サイト・関連ページ</dt>
+                        <dd class="text-slate-900 font-semibold flex items-center gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                            </svg>
+                            <a href="{{ event.official_url }}" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:text-sky-700 underline truncate">
+                                {{ event.official_url }}
+                            </a>
+                        </dd>
+                    </div>
+                    {% endif %}
+
+                    <!-- Location -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">場所・所在地</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>{{ event.location }} ({{ event.city }})</span>
+                        </dd>
+                    </div>
+
+                    <!-- Fee -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">料金・利用料</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>{{ event.fee }}</span>
+                        </dd>
+                    </div>
+
+                    <!-- Organizer -->
+                    <div>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">主催・お問合せ</dt>
+                        <dd class="text-slate-900 font-semibold flex items-start gap-2">
+                            <svg class="w-5 h-5 text-sky-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span>{{ event.organizer }}</span>
+                        </dd>
+                    </div>
+                </dl>
+
+                <div class="pt-4 border-t border-slate-100 space-y-2">
+                    {% if event.official_url %}
+                    <a href="{{ event.official_url }}" target="_blank" rel="noopener noreferrer" 
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow-md transition-colors text-sm">
+                        🌐 公式サイトを見る ↗
+                    </a>
+                    {% endif %}
+                    <a href="https://maps.google.com/?q={{ event.location }}" target="_blank" rel="noopener noreferrer" 
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-md transition-colors text-sm">
+                        📍 Google Mapで位置を確認
+                    </a>
+                    <a href="../index.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors text-sm">
+                        一覧に戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const lat = {{ event.lat if event.lat else 34.9769 }};
+        const lng = {{ event.lng if event.lng else 138.3831 }};
+        const title = "{{ event.title }}";
+
+        const map = L.map('detailMap').setView([lat, lng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        L.marker([lat, lng]).addTo(map)
+            .bindPopup(`<b>${title}</b><br><a href="https://maps.google.com/?q=${lat},${lng}" target="_blank">Google Mapで開く</a>`)
+            .openPopup();
+    });
+</script>
+{% endblock %}

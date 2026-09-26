@@ -1,0 +1,17 @@
+'くふうロコ しずおか' からイベント情報を取得します...
+  page 1/6: 20件 (累計 20件)
+  page 2/6: 20件 (累計 40件)
+  page 3/6: 20件 (累計 60件)
+  page 4/6: 20件 (累計 80件)
+  page 5/6: 20件 (累計 100件)
+  page 6/13: 9件 (累計 109件)
+Traceback (most recent call last):
+  File "C:\Users\junky\Documents\works\crawler.py", line 250, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\junky\Documents\works\crawler.py", line 236, in main
+    raw_events = fetch_all_events()
+  File "C:\Users\junky\Documents\works\crawler.py", line 83, in fetch_all_events
+    total_pages = -(-info["totalCount"] // info["itemSize"])  # 切り上げ
+                    ~~~~~~~~~~~~~~~~~~~~^^~~~~~~~~~~~~~~~~~
+ZeroDivisionError: integer division or modulo by zero

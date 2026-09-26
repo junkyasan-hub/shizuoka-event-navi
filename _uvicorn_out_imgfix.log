@@ -1,0 +1,11 @@
+INFO:     127.0.0.1:59969 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59969 - "GET /?item_type=all&scene=all&search=&date=2026-10-17&city=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63820 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63820 - "GET /?item_type=all&scene=all&search=&date=2026-10-17&city=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54421 - "GET /?item_type=all&scene=rainy&search=&date=2026-09-12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56399 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62337 - "GET /?item_type=all&scene=all&search=&date=2026-09-09&city=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57370 - "GET /?item_type=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51295 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51295 - "GET /?item_type=event&scene=all&search=&date= HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53005 - "GET / HTTP/1.1" 200 OK

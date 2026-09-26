@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>{% block title %}静岡県お出かけ・イベントナビ【公式】{% endblock %}</title>
+    <meta name="description" content="{% block description %}静岡県内の最新イベント情報、定番観光スポット、話題のご当地グルメ、駐車場情報、ファミリー・カップル向けのおすすめお出かけ情報を網羅。公式サイトリンク＆マップ付き！{% endblock %}">
+    <meta name="keywords" content="静岡県お出かけ・イベントナビ, 静岡 イベント, 静岡 観光, 静岡 グルメ, 駿府城, 浜松まつり, 富士山, 熱海花火, 駐車場無料, ベビーカー可">
+    <meta name="author" content="静岡県お出かけ・イベントナビ">
+
+    <!-- Open Graph / OGP (Facebook, LINE) -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="静岡県お出かけ・イベントナビ">
+    <meta property="og:title" content="{% block og_title %}静岡県お出かけ・イベントナビ{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}静岡県内の最新イベント・観光スポット・名物グルメ情報を地図＆公式サイトリンク付きで検索できます。{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}https://images.unsplash.com/photo-1528164344705-47542687990d?auto=format&fit=crop&w=1200&q=80{% endblock %}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}静岡県お出かけ・イベントナビ{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}静岡県内の最新イベント・観光スポット・名物グルメ情報{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}https://images.unsplash.com/photo-1528164344705-47542687990d?auto=format&fit=crop&w=1200&q=80{% endblock %}">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-full text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="{{ base_url }}index.html" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-sky-600 to-indigo-700 bg-clip-text text-transparent">静岡県お出かけ・イベントナビ</span>
+                        <span class="hidden md:inline-block text-xs font-semibold text-sky-600 ml-2 px-2 py-0.5 bg-sky-50 rounded-full">Shizuoka Guide</span>
+                    </div>
+                </a>
+
+                <!-- Navigation -->
+                <nav class="flex items-center gap-4">
+                    <a href="{{ base_url }}index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-sky-600 hover:bg-slate-100 transition-colors">
+                        トップ・一覧
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 mt-16 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-3">静岡県お出かけ・イベントナビ</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        静岡県内のイベント、定番観光スポット、ご当地グルメ情報を自動収集し、公式サイトリンク＆位置情報（Google Map）を明記して発信中。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-3">主要エリア</h4>
+                    <div class="flex flex-wrap gap-2 text-sm">
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">静岡市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">浜松市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">沼津市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">熱海市</span>
+                        <span class="px-2.5 py-1 bg-slate-800 rounded text-slate-300">伊東市</span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-3">機能・特長</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        公式サイトURL自動収集 / Schema.org JSON-LD 構造化データ対応 / リアルタイム「終了」判定ソート機能
+                    </p>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
+                &copy; {{ current_year }} 静岡県お出かけ・イベントナビ All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
