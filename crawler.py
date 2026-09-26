@@ -2,6 +2,8 @@
 """
 静岡県全域（中部・東部・伊豆・西部）対応 自動収集＆AIリライトクローラー
 (crawler.py)
+Uses CSV Open Data and Gemini 3.5 Flash-lite Google Search Grounding to collect
+accurate, verified events across Shizuoka prefecture.
 """
 
 import csv
@@ -19,7 +21,7 @@ logger = logging.getLogger("crawler")
 DB_PATH = "events.db"
 USER_AGENT = "ShizuokaEventNaviBot/1.0 (+https://github.com/junkyasan-hub/shizuoka-event-navi)"
 
-# 地域別データソース定義
+# 地域別データソース定義 (オープンデータ CSV)
 DATA_SOURCES = [
     {
         "region": "西部（浜松）",
@@ -28,7 +30,48 @@ DATA_SOURCES = [
     },
 ]
 
-# 地域別デフォルト画像
+# AI自動探索を行う対象地域リスト
+AI_DISCOVERY_REGIONS = [
+    {
+        "region_name": "中部（静岡・志太榛原）",
+        "cities": ["静岡市", "焼津市", "藤枝市", "島田市"]
+    },
+    {
+        "region_name": "東部（沼津・三島・富士）",
+        "cities": ["沼津市", "三島市", "富士市", "御殿場市"]
+    },
+    {
+        "region_name": "伊豆（熱海・伊東・下田）",
+        "cities": ["熱海市", "伊東市", "伊豆市", "下田市", "伊豆の国市"]
+    },
+    {
+        "region_name": "西部（浜松・遠州）",
+        "cities": ["浜松市", "磐田市", "袋井市", "掛川市", "湖西市"]
+    }
+]
+
+# 市区町村ごとの代表緯度経度・画像マッピング
+CITY_COORDS = {
+    "静岡市": (34.9756, 138.3828),
+    "浜松市": (34.7108, 137.7261),
+    "沼津市": (35.1003, 138.8596),
+    "熱海市": (35.0964, 139.0717),
+    "伊東市": (34.9669, 139.0984),
+    "富士市": (35.1614, 138.6763),
+    "富士宮市": (35.2223, 138.6163),
+    "御殿場市": (35.3092, 138.9348),
+    "焼津市": (34.8664, 138.3186),
+    "藤枝市": (34.8647, 138.2575),
+    "三島市": (35.1183, 138.9186),
+    "伊豆市": (34.9722, 138.9556),
+    "袋井市": (34.7508, 137.9256),
+    "掛川市": (34.7708, 137.9956),
+    "磐田市": (34.7108, 137.8556),
+    "下田市": (34.6781, 138.9453),
+    "島田市": (34.8364, 138.1756),
+    "伊豆の国市": (35.0381, 138.9453),
+}
+
 REGION_IMAGES = {
     "静岡市": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
     "浜松市": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",
@@ -85,7 +128,7 @@ def get_existing_event_titles():
 def save_or_update_events(items):
     if not items:
         logger.info("新規登録対象のイベントはありませんでした。")
-        return
+        return 0
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -112,6 +155,7 @@ def save_or_update_events(items):
     conn.commit()
     conn.close()
     logger.info(f"全域データ保存完了: 新規 {count_new} 件を追加登録しました。")
+    return count_new
 
 def run_crawler():
     logger.info("=== 静岡県全域（中部・東部・伊豆・西部）自動クローラー起動 ===")
@@ -121,6 +165,7 @@ def run_crawler():
     today_iso = datetime.date.today().isoformat()
     processed_items = []
 
+    # 1. CSV データソースのクローリング
     for source in DATA_SOURCES:
         logger.info(f"データソース取得中: [{source['region']}] {source['url']}")
         time.sleep(2)  # 相手サーバー負荷軽減
@@ -144,23 +189,18 @@ def run_crawler():
                 if raw_title in existing_titles:
                     continue
 
-                logger.info(f"新規イベント検出: {raw_title} (AIリライト実行)")
-
-                raw_summary = (row.get("説明") or "").strip().replace("\r\n", " ").replace("\n", " ")[:120]
-                raw_description = (row.get("説明") or "").strip()
-
                 city = row.get("市区町村名", "浜松市").strip() or "浜松市"
 
-                # Gemini API リライト & 事実確認（ファクトチェック）
+                # Gemini 3.5 Flash-lite によるファクトチェック
                 ai_res = ai_rewriter.verify_and_rewrite_event(
                     raw_title=raw_title,
-                    raw_summary=raw_summary,
-                    raw_description=raw_description,
+                    raw_summary=(row.get("説明") or "")[:120],
+                    raw_description=(row.get("説明") or ""),
                     city=city
                 )
 
                 if not ai_res.get("is_verified", True):
-                    logger.warning(f"実在性が確認できないイベントのためスキップ: {raw_title}")
+                    logger.warning(f"実在性が確認できないためスキップ: {raw_title}")
                     continue
 
                 date_str = ai_res.get("date_str") or format_date_str(
@@ -170,15 +210,16 @@ def run_crawler():
                     row.get("終了時間", "").strip()
                 )
 
+                coords = CITY_COORDS.get(city, (34.7108, 137.7261))
                 try:
-                    lat = float(row.get("緯度", 34.7108))
+                    lat = float(row.get("緯度", coords[0]))
                 except ValueError:
-                    lat = 34.7108
+                    lat = coords[0]
 
                 try:
-                    lng = float(row.get("経度", 137.7261))
+                    lng = float(row.get("経度", coords[1]))
                 except ValueError:
-                    lng = 137.7261
+                    lng = coords[1]
 
                 parking_info = (row.get("駐車場情報") or "情報なし（公式サイトをご確認ください）").strip()
                 fee_basic = (row.get("料金(基本)") or "").strip()
@@ -214,6 +255,49 @@ def run_crawler():
 
         except Exception as e:
             logger.error(f"データソース取得エラー [{source['region']}]: {e}")
+
+    # 2. AI (Gemini 3.5 Flash-lite + Google Search Grounding) による地域別自動探索
+    logger.info("AI (Gemini 3.5 Flash-lite) による全域（中部・東部・伊豆・西部）自動イベント探索を開始します...")
+    for reg in AI_DISCOVERY_REGIONS:
+        r_name = reg["region_name"]
+        cities = reg["cities"]
+        logger.info(f"地域イベント探索中: [{r_name}] {cities}")
+        discovered = ai_rewriter.discover_regional_events(r_name, cities)
+
+        for d_item in discovered:
+            d_title = d_item.get("title", "").strip()
+            if not d_title or d_title in existing_titles:
+                continue
+
+            d_city = d_item.get("city", cities[0])
+            coords = CITY_COORDS.get(d_city, (34.9756, 138.3828))
+
+            item = {
+                "item_type": "event",
+                "title": d_title,
+                "date_str": d_item.get("date_str", "2026年開催"),
+                "location": d_item.get("location", f"{d_city}内"),
+                "city": d_city,
+                "address": d_item.get("address", d_city),
+                "lat": coords[0],
+                "lng": coords[1],
+                "google_maps_url": f"https://maps.google.com/?q={coords[0]},{coords[1]}",
+                "official_url": d_item.get("official_url", "https://www.pref.shizuoka.jp/"),
+                "tags": ",".join(d_item["tags"]) if isinstance(d_item.get("tags"), list) else d_item.get("tags", "静岡イベント"),
+                "summary": d_item.get("summary", d_title),
+                "description": d_item.get("description", d_title),
+                "image_url": REGION_IMAGES.get(d_city, REGION_IMAGES["デフォルト"]),
+                "fee": d_item.get("fee", "要確認"),
+                "organizer": d_item.get("organizer", f"{d_city}観光協会/自治体"),
+                "parking_info": d_item.get("parking_info", "情報なし（公式サイトをご確認ください）"),
+                "target_age": d_item.get("target_age", "全年齢"),
+                "is_free_parking": 1 if d_item.get("is_free_parking") else 0,
+                "is_stroller_ok": 1 if d_item.get("is_stroller_ok") else 0,
+                "is_rainy_ok": 1 if d_item.get("is_rainy_ok") else 0,
+                "category_scene": d_item.get("category_scene", "一般"),
+            }
+            processed_items.append(item)
+            existing_titles.add(d_title)
 
     save_or_update_events(processed_items)
     logger.info("=== クローラー全行程完了 ===")

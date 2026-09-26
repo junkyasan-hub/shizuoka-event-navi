@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-AI Fact-Checking & Rewriting Module for Shizuoka Event Navi
+AI Fact-Checking, Rewriting & Regional Event Discovery Module for Shizuoka Event Navi
 (ai_rewriter.py)
-Uses Gemini 2.5 Flash + Google Search Grounding to verify event existence,
-factual accuracy (dates, locations, official URLs), and generate rewritten descriptions.
+Uses Gemini 3.5 Flash-lite + Google Search Grounding to verify event existence,
+discover regional official events across Shizuoka prefecture, and generate clean structured data.
 """
 
 import os
@@ -16,7 +16,7 @@ logger = logging.getLogger("ai_rewriter")
 
 def verify_and_rewrite_event(raw_title, raw_summary="", raw_description="", city="静岡県"):
     """
-    Gemini 2.5 Flash + Google Search Grounding を使用して、
+    Gemini 3.5 Flash-lite + Google Search Grounding を使用して、
     イベントの実在性・開催日・会場などの事実確認を行ってリライトします。
     実在が確認できない場合は is_verified=False を返します。
     """
@@ -74,7 +74,6 @@ Google検索ツールを使用して、以下のイベント情報が【静岡�
 必ず純粋なJSONオブジェクトのみを出力してください。テキスト注釈やマークダウンブロックは含めないでください。
 """
 
-        # Gemini 3.5 Flash-lite を最優先で使用し、必要に応じてフォールバック
         model_candidates = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
         response = None
         for model_name in model_candidates:
@@ -130,10 +129,91 @@ Google検索ツールを使用して、以下のイベント情報が【静岡�
             "description": raw_description
         }
 
+def discover_regional_events(region_name, cities):
+    """
+    Gemini 3.5 Flash-lite + Google Search Grounding を使用して、
+    指定地域の2026年最新公的・観光イベント情報を自動探索・抽出します。
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        logger.warning(f"[{region_name}] GEMINI_API_KEYが未設定のため地域探索をスキップします。")
+        return []
+
+    try:
+        client = genai.Client(api_key=api_key)
+        cities_str = "、".join(cities)
+        prompt = f"""
+あなたは「静岡県お出かけ・イベントナビ」のプロのイベント編集者です。
+Google検索ツールを使用して、静岡県の【{region_name}（対象自治体: {cities_str}）】で2026年に開催される最新の観光イベント・フェスティバル・祭り・公的行事の情報を3〜5件検索し、正確な開催情報を抽出してください。
+
+【検索対象の条件】
+- 地域: {cities_str}
+- 開催時期: 2026年9月〜12月（現在開催中または今後開催予定のもの）
+- 情報源: 市役所公式、観光協会、公的ニュース等の信頼できる発表情報
+
+【返答フォーマット】
+以下のJSON構造の配列形式のみで返してください（解説文やマークダウンブロックは含めないでください）：
+[
+  {{
+    "title": "正確なイベント正式名称",
+    "city": "市町村名（例: 静岡市、沼津市等）",
+    "date_str": "正確な2026年の開催日時（例: 2026年10月15日(土)〜10月16日(日)）",
+    "location": "会場名",
+    "address": "住所",
+    "official_url": "公式サイトまたは情報源のURL",
+    "summary": "100〜140文字程度の魅力が伝わるオリジナルの紹介文",
+    "description": "200〜300文字程度の詳細本文",
+    "fee": "料金情報",
+    "organizer": "主催者名",
+    "parking_info": "駐車場情報",
+    "is_free_parking": true,
+    "is_stroller_ok": true,
+    "is_rainy_ok": false,
+    "target_age": "対象年齢（例: 全年齢, ファミリー向け）",
+    "category_scene": "シーン分類（ファミリー向け, カップル向け, 一般 のいずれか）",
+    "tags": ["関連タグ1", "関連タグ2", "関連タグ3"]
+  }}
+]
+"""
+
+        model_candidates = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
+        response = None
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        tools=[{"google_search": {}}]
+                    )
+                )
+                if response:
+                    break
+            except Exception as em:
+                logger.warning(f"モデル [{model_name}] 地域探索失敗: {em}")
+
+        if not response:
+            return []
+
+        text = response.text.strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+
+        items = json.loads(text)
+        if isinstance(items, list):
+            return items
+        return []
+
+    except Exception as e:
+        logger.error(f"地域イベント自動探索エラー [{region_name}]: {e}")
+        return []
+
 def rewrite_event_info(raw_title, raw_summary, raw_description=""):
-    """
-    従来の互換用メソッド。実在確認付きの verify_and_rewrite_event を内部呼び出しします。
-    """
     res = verify_and_rewrite_event(raw_title, raw_summary, raw_description)
     return res
 
