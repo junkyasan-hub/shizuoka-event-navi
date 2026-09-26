@@ -49,5 +49,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftp
+          security-mode: loose
           local-dir: ./dist/
-          server-dir: /very-good.biz/public_html/event.very-good.biz/   # スターサーバーの公開ディレクトリ（必要に応じて /domain.com/public_html/ 等に変更）
+          server-dir: /very-good.biz/public_html/event.very-good.biz/   # スターサーバーの公開ディレクトリ
