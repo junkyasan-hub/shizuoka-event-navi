@@ -51582,8 +51582,8 @@
             baseToday = new Date(2026, 8, 27); // 2026年9月27日
         }
 
-        // 初期状態で「今日から1週間」を自動セット
-        setPreset('1week');
+        // 初期状態では「全期間」を表示し、ユーザーが「今日から1週間」「今月」等をワンタップで絞り込めるようにする
+        setPreset('all');
 
         function setPreset(presetType) {
             presetButtons.forEach(b => {
