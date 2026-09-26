@@ -15,256 +15,343 @@
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="relative bg-gradient-to-br from-sky-900 via-indigo-900 to-slate-900 text-white py-12 md:py-20 px-4 overflow-hidden">
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-    <div class="max-w-4xl mx-auto text-center relative z-10">
-        <span class="inline-block px-3 py-1 bg-sky-500/20 text-sky-300 border border-sky-400/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
-            Shizuoka Prefecture Outing & Event Guide
-        </span>
-        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-4">
-            静岡県お出かけ・イベントナビ
-        </h1>
-        <p class="text-base md:text-lg text-slate-300 max-w-2xl mx-auto mb-8">
-            静岡のイベント、定番観光スポット、おすすめグルメ情報を日付検索・カレンダー・地図・公式サイトリンク付きでチェック！
-        </p>
-
-        <!-- Category Tabs -->
-        <div class="flex items-center justify-center gap-2 mb-6" id="categoryTabs">
-            <button data-type="all" class="cat-tab-btn active-cat-tab px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all shadow-md bg-sky-500 text-white">
-                🌟 すべて
-            </button>
-            <button data-type="event" class="cat-tab-btn px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10">
-                🎉 イベント
-            </button>
-            <button data-type="spot" class="cat-tab-btn px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10">
-                🏞️ 定番スポット
-            </button>
-            <button data-type="gourmet" class="cat-tab-btn px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10">
-                🍜 定番グルメ
-            </button>
-        </div>
-
-        <!-- Search Bar & Date Picker Container -->
-        <div class="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 mb-6">
-            <!-- Keyword Search Input -->
-            <div class="relative flex-1">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-                <input type="text" id="searchInput" placeholder="スポット名・キーワード・エリアで検索..." 
-                    class="w-full pl-11 pr-4 py-3.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:bg-white/20 transition-all text-sm sm:text-base">
-            </div>
-
-            <!-- Date Picker Filter -->
-            <div class="relative shrink-0 flex items-center gap-2">
-                <span class="text-xs font-bold text-slate-300 whitespace-nowrap">📅 開催日:</span>
-                <input type="date" id="dateInput"
-                    class="px-3.5 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs sm:text-sm">
-                <button id="clearDateBtn" class="hidden px-2.5 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold text-slate-200">
-                    クリア
+<!-- Top Sticky Sub-Header with Category & Scene Tabs -->
+<div class="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            
+            <!-- Type Tabs -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="typeTabs">
+                <button data-type="all" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm bg-sky-600 text-white shadow-sky-500/20">
+                    🌟 すべて
+                </button>
+                <button data-type="event" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    🎉 イベント
+                </button>
+                <button data-type="spot" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    🏞️ 定番スポット
+                </button>
+                <button data-type="gourmet" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    🍜 定番グルメ
                 </button>
             </div>
-        </div>
 
-        <!-- Tag Filters -->
-        <div class="flex flex-wrap items-center justify-center gap-2" id="tagFilters">
-            <button data-tag="all" class="tag-btn active-tag px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm bg-white/20 text-white">
-                すべてのタグ
-            </button>
-            {% for tag in all_tags %}
-            <button data-tag="{{ tag }}" class="tag-btn px-3.5 py-1.5 rounded-full text-xs font-medium transition-all bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10">
-                #{{ tag }}
-            </button>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<!-- Item Cards List Section -->
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200 flex-wrap gap-4">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-900">掲載一覧</h2>
-            <p class="text-sm text-slate-500 mt-1">全 <span id="visibleCount" class="font-bold text-sky-600">{{ events|length }}</span> 件の情報（最新情報を優先表示中）</p>
-        </div>
-
-        <!-- View Switcher (Card Grid vs Calendar) -->
-        <div class="flex items-center bg-slate-200/80 p-1 rounded-xl gap-1">
-            <button id="viewGridBtn" class="px-4 py-2 rounded-lg text-xs font-bold transition-all shadow bg-white text-sky-600 flex items-center gap-1.5">
-                📋 カード一覧
-            </button>
-            <button id="viewCalendarBtn" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-sky-600 flex items-center gap-1.5">
-                📅 カレンダー表示
-            </button>
-        </div>
-    </div>
-
-    <!-- 1. Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="eventsGrid">
-        {% for item in events %}
-        <article class="event-card group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 {% if item.is_ended %} opacity-75 bg-slate-50/90 {% endif %}"
-                 data-item-type="{{ item.item_type }}"
-                 data-tags="{{ item.tags }}" 
-                 data-title="{{ item.title }}" 
-                 data-city="{{ item.city }}"
-                 data-location="{{ item.location }}"
-                 data-start-date="{{ item.start_date if item.start_date else '' }}"
-                 data-end-date="{{ item.end_date if item.end_date else '' }}"
-                 data-is-ended="{{ '1' if item.is_ended else '0' }}">
-            
-            <!-- Image Thumbnail & Badges -->
-            <div class="relative h-52 overflow-hidden bg-slate-100">
-                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 {% if item.is_ended %} grayscale-[40%] {% endif %}" loading="lazy">
-                
-                <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-                    {% if item.is_ended %}
-                    <span class="px-3 py-1 bg-slate-800/90 backdrop-blur-md text-slate-200 text-xs font-bold rounded-lg shadow-sm border border-slate-600">
-                        🔒 終了
-                    </span>
-                    {% else %}
-                    <span class="px-3 py-1 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-bold rounded-lg shadow-sm">
-                        ✨ {{ item.status_label }}
-                    </span>
-                    {% endif %}
-
-                    <span class="px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold rounded-lg shadow-sm">
-                        📍 {{ item.city }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="p-6 flex-1 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-2 {% if item.is_ended %} text-slate-500 {% else %} text-sky-600 {% endif %}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <span>{{ item.date_str }}</span>
-                    </div>
-
-                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 mb-3">
-                        <a href="events/{{ item.id }}.html">
-                            {% if item.is_ended %}<span class="text-slate-500 font-normal">[終了]</span> {% endif %}{{ item.title }}
-                        </a>
-                    </h3>
-
-                    <p class="text-slate-600 text-sm line-clamp-3 leading-relaxed mb-4">
-                        {{ item.summary }}
-                    </p>
+            <!-- Scene Pills & Mobile Filter Button -->
+            <div class="flex items-center justify-between md:justify-end gap-2 shrink-0">
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="scenePills">
+                    <button data-scene="family" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        👨‍👩‍👧‍👦 ファミリー
+                    </button>
+                    <button data-scene="couple" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        👩‍❤️‍👨 カップル
+                    </button>
+                    <button data-scene="rainy" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        ☔ 雨の日OK
+                    </button>
                 </div>
 
-                <div>
-                    <!-- Official URL & Google Maps Links -->
-                    <div class="pt-3 border-t border-slate-100 mb-4 flex items-center justify-between text-xs gap-2">
-                        <a href="https://maps.google.com/?q={{ item.location }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            Google Map
-                        </a>
-
-                        {% if item.official_url %}
-                        <a href="{{ item.official_url }}" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:text-sky-700 font-bold flex items-center gap-1 hover:underline">
-                            🌐 公式Web ↗
-                        </a>
-                        {% endif %}
-                    </div>
-
-                    <a href="events/{{ item.id }}.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 {% if item.is_ended %} bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 {% else %} bg-slate-50 hover:bg-sky-600 text-slate-700 hover:text-white border-slate-200 hover:border-sky-600 group-hover:shadow-md {% endif %}">
-                        {% if item.is_ended %}終了アーカイブを見る{% else %}詳細・地図を見る{% endif %}
-                        <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                </div>
+                <button id="mobileSidebarToggle" class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
+                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    条件絞り込み
+                </button>
             </div>
-        </article>
-        {% endfor %}
-    </div>
 
-    <!-- 2. FullCalendar Canvas Container -->
-    <div id="calendarView" class="hidden bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
-            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                📅 静岡県イベントカレンダー
-            </h3>
-            <div class="flex items-center gap-3 text-xs font-semibold">
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span> イベント</span>
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> スポット</span>
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span> グルメ</span>
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> 終了</span>
-            </div>
-        </div>
-        <div id="fullCalendarContainer" class="min-h-[550px]"></div>
-    </div>
-
-    <!-- No Results State -->
-    <div id="noResults" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200">
-        <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <h3 class="text-lg font-bold text-slate-700 mb-1">条件に該当する情報が見つかりません</h3>
-        <p class="text-sm text-slate-500">キーワードを変更するか、フィルターをリセットしてください。</p>
-    </div>
-</section>
-
-<!-- Detail & Map Modal for Static Site Calendar -->
-<div id="detailModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <button onclick="closeModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full z-20">
-            ✕
-        </button>
-        <h3 id="modalTitle" class="text-xl font-bold text-slate-900 pr-8"></h3>
-        
-        <div id="modalContent" class="space-y-3 text-xs sm:text-sm text-slate-700">
-            <!-- Dynamically filled -->
-        </div>
-
-        <div id="modalActionBtn" class="pt-2">
-            <!-- Dynamic button link -->
-        </div>
-
-        <div class="pt-3">
-            <button onclick="closeModal()" class="w-full py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200">
-                閉じる
-            </button>
         </div>
     </div>
 </div>
+
+<!-- Main Grid Container -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+        <!-- Left Sidebar Filters -->
+        <aside id="sidebarFilter" class="hidden lg:block lg:col-span-1 space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 sticky top-36 space-y-6">
+                
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                        こだわり条件絞り込み
+                    </h2>
+                </div>
+
+                <!-- Date Filter -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 開催日で検索</label>
+                    <input type="date" id="dateInput" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <button id="clearDateBtn" class="text-xs font-semibold text-sky-600 hover:underline hidden">日付指定をクリア</button>
+                </div>
+
+                <!-- Feature Checkboxes -->
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">機能・サービス</label>
+                    
+                    <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                        <input type="checkbox" id="checkFreeParking" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                        <span>🚗 駐車場無料</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                        <input type="checkbox" id="checkStroller" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                        <span>👶 ベビーカー可</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer hover:text-sky-600">
+                        <input type="checkbox" id="checkRainy" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                        <span>☔ 屋内・雨の日OK</span>
+                    </label>
+                </div>
+
+                <!-- City Filter Dropdown -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">エリア選択</label>
+                    <select id="citySelect" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="all">静岡県内 全エリア</option>
+                        {% for c in cities %}
+                        <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Popular Tags -->
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">人気キーワード</label>
+                    <div class="flex flex-wrap gap-1.5" id="tagPills">
+                        <button data-tag="all" class="tag-btn active-tag px-2.5 py-1 rounded-lg text-xs font-medium bg-sky-100 text-sky-700">
+                            すべて
+                        </button>
+                        {% for tag in all_tags[:15] %}
+                        <button data-tag="{{ tag }}" class="tag-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">
+                            #{{ tag }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="pt-2">
+                    <button id="resetAllFilters" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all">
+                        条件をすべてクリア
+                    </button>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="lg:col-span-3 space-y-6">
+
+            <!-- Control Bar: Keyword Search & View Switcher -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                
+                <!-- Keyword Input -->
+                <div class="relative flex-1">
+                    <input type="text" id="searchInput" placeholder="スポット名・キーワード・住所で検索..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- View Switcher & Result Count -->
+                <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                    <span class="text-xs font-bold text-slate-500">
+                        該当 <span id="visibleCount" class="text-sky-600 font-extrabold text-base">{{ events|length }}</span> 件
+                    </span>
+
+                    <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                        <button id="viewGridBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold shadow bg-white text-sky-600 flex items-center gap-1.5 transition-all">
+                            📋 カード一覧
+                        </button>
+                        <button id="viewCalendarBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-1.5 transition-all">
+                            📅 カレンダー
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Card Grid View -->
+            <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for event in events %}
+                <div class="event-card bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 hover:shadow-md transition-all flex flex-col group relative {% if event.is_ended %}opacity-75 bg-slate-50/80{% endif %}"
+                     data-type="{{ event.item_type }}"
+                     data-city="{{ event.city }}"
+                     data-title="{{ event.title }}"
+                     data-summary="{{ event.summary }}"
+                     data-location="{{ event.location }}"
+                     data-tags="{{ event.tags }}"
+                     data-date="{{ event.date_str }}"
+                     data-parking="{{ event.is_free_parking }}"
+                     data-stroller="{{ event.is_stroller_ok }}"
+                     data-rainy="{{ event.is_rainy_ok }}"
+                     data-scene="{{ event.category_scene }}">
+
+                    <!-- Card Header / Image -->
+                    <div class="relative h-48 overflow-hidden bg-slate-100">
+                        <img src="{{ event.image_url }}" alt="{{ event.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                        
+                        <!-- Badges -->
+                        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            {% if event.is_ended %}
+                            <span class="px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded-lg border border-slate-700">
+                                🔒 終了
+                            </span>
+                            {% else %}
+                            <span class="px-2.5 py-1 bg-emerald-500/90 backdrop-blur-md text-white text-xs font-bold rounded-lg shadow-sm">
+                                ✨ 開催中/予定
+                            </span>
+                            {% endif %}
+
+                            {% if event.item_type == 'spot' %}
+                            <span class="px-2.5 py-1 bg-emerald-600/90 text-white text-xs font-bold rounded-lg">定番スポット</span>
+                            {% elif event.item_type == 'gourmet' %}
+                            <span class="px-2.5 py-1 bg-amber-600/90 text-white text-xs font-bold rounded-lg">定番グルメ</span>
+                            {% else %}
+                            <span class="px-2.5 py-1 bg-sky-600/90 text-white text-xs font-bold rounded-lg">イベント</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- City Badge -->
+                        <div class="absolute bottom-3 right-3">
+                            <span class="px-2.5 py-1 bg-slate-900/70 backdrop-blur-md text-white text-xs font-medium rounded-lg">
+                                📍 {{ event.city }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <div class="text-xs font-bold text-sky-600 flex items-center gap-1">
+                                📅 {{ event.date_str }}
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900 line-clamp-2 group-hover:text-sky-600 transition-colors">
+                                <a href="events/{{ event.id }}.html" class="focus:outline-none">
+                                    {{ event.title }}
+                                </a>
+                            </h3>
+                            <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                {{ event.summary }}
+                            </p>
+                        </div>
+
+                        <!-- Tags & Action -->
+                        <div class="pt-3 border-t border-slate-100 space-y-3">
+                            <div class="flex flex-wrap gap-1">
+                                {% if event.is_free_parking %}
+                                <span class="px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-semibold rounded border border-sky-100">🚗 駐車場無料</span>
+                                {% endif %}
+                                {% if event.is_stroller_ok %}
+                                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded border border-emerald-100">👶 ベビーカー可</span>
+                                {% endif %}
+                                {% if event.is_rainy_ok %}
+                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-semibold rounded border border-indigo-100">☔ 雨の日OK</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1 text-xs">
+                                <span class="text-slate-500 font-medium truncate max-w-[140px]">
+                                    📍 {{ event.location }}
+                                </span>
+                                <a href="events/{{ event.id }}.html" class="font-bold text-sky-600 hover:text-sky-700 flex items-center gap-0.5">
+                                    詳細を見る ➔
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Calendar View Canvas (Hidden by default) -->
+            <div id="calendarView" class="hidden bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-900">📅 イベント月別カレンダー</h3>
+                    <p class="text-xs text-slate-500">日付をクリックして詳細を確認できます</p>
+                </div>
+                <div id="fullCalendarContainer" class="min-h-[550px]"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="noResults" class="hidden bg-white rounded-2xl p-12 text-center border border-slate-200 space-y-3">
+                <div class="text-4xl">🔍</div>
+                <h3 class="text-base font-bold text-slate-900">該当するお出かけ情報が見つかりませんでした</h3>
+                <p class="text-xs text-slate-500">条件を緩和するか、別のキーワード・日付で検索してみてください。</p>
+            </div>
+
+        </main>
+
+    </div>
+</div>
+
+<!-- Calendar / Map Event Detail Modal -->
+<div id="detailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 p-6 relative animate-in fade-in zoom-in duration-200">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-xl font-bold">
+            ✕
+        </button>
+
+        <h3 id="modalTitle" class="text-lg font-bold text-slate-900 pr-8 leading-snug"></h3>
+        <div id="modalContent" class="space-y-3"></div>
+
+        <div id="modalActionBtn" class="pt-2"></div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    const calendarEventsData = {{ calendar_events_json|safe }};
+    let calendarInstance = null;
+    let currentType = 'all';
+    let currentScene = 'all';
+    let currentTag = 'all';
+
     document.addEventListener('DOMContentLoaded', () => {
-        const catButtons = document.querySelectorAll('.cat-tab-btn');
-        const tagButtons = document.querySelectorAll('.tag-btn');
-        const cards = document.querySelectorAll('.event-card');
+        const eventsGrid = document.getElementById('eventsGrid');
+        const calendarView = document.getElementById('calendarView');
+        const viewGridBtn = document.getElementById('viewGridBtn');
+        const viewCalendarBtn = document.getElementById('viewCalendarBtn');
         const searchInput = document.getElementById('searchInput');
         const dateInput = document.getElementById('dateInput');
         const clearDateBtn = document.getElementById('clearDateBtn');
+        const citySelect = document.getElementById('citySelect');
+        const checkFreeParking = document.getElementById('checkFreeParking');
+        const checkStroller = document.getElementById('checkStroller');
+        const checkRainy = document.getElementById('checkRainy');
+        const resetAllFilters = document.getElementById('resetAllFilters');
         const visibleCount = document.getElementById('visibleCount');
         const noResults = document.getElementById('noResults');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        const sidebarFilter = document.getElementById('sidebarFilter');
 
-        const viewGridBtn = document.getElementById('viewGridBtn');
-        const viewCalendarBtn = document.getElementById('viewCalendarBtn');
-        const eventsGrid = document.getElementById('eventsGrid');
-        const calendarView = document.getElementById('calendarView');
-        let calendarInstance = null;
+        const cards = Array.from(document.querySelectorAll('.event-card'));
+        const typeButtons = document.querySelectorAll('.cat-tab-btn');
+        const sceneButtons = document.querySelectorAll('.scene-pill-btn');
+        const tagButtons = document.querySelectorAll('.tag-btn');
 
-        const calendarEventsData = {{ calendar_events_json | safe }};
+        // Mobile Sidebar Toggle
+        mobileSidebarToggle.addEventListener('click', () => {
+            sidebarFilter.classList.toggle('hidden');
+        });
 
-        let currentType = 'all';
-        let currentTag = 'all';
-
+        // Filter Function
         function filterEvents() {
             const query = searchInput.value.toLowerCase().trim();
             const selectedDate = dateInput.value;
-            let count = 0;
+            const selectedCity = citySelect.value;
+            const wantParking = checkFreeParking.checked;
+            const wantStroller = checkStroller.checked;
+            const wantRainy = checkRainy.checked;
 
             if (selectedDate) {
                 clearDateBtn.classList.remove('hidden');
@@ -272,31 +359,37 @@
                 clearDateBtn.classList.add('hidden');
             }
 
-            cards.forEach(card => {
-                const itemType = card.dataset.itemType;
-                const tags = card.dataset.tags || '';
-                const title = card.dataset.title.toLowerCase();
-                const city = card.dataset.city.toLowerCase();
-                const location = card.dataset.location.toLowerCase();
-                const startDate = card.dataset.startDate;
-                const endDate = card.dataset.endDate;
+            let count = 0;
 
-                const typeMatch = (currentType === 'all') || (itemType === currentType);
-                const tagMatch = (currentTag === 'all') || tags.includes(currentTag);
-                const searchMatch = !query || title.includes(query) || city.includes(query) || location.includes(query) || tags.toLowerCase().includes(query);
-                
-                let dateMatch = true;
+            cards.forEach(card => {
+                const type = card.dataset.type;
+                const city = card.dataset.city;
+                const title = card.dataset.title.toLowerCase();
+                const summary = card.dataset.summary.toLowerCase();
+                const location = card.dataset.location.toLowerCase();
+                const tags = card.dataset.tags.toLowerCase();
+                const dateStr = card.dataset.date;
+                const parking = card.dataset.parking === '1';
+                const stroller = card.dataset.stroller === '1';
+                const rainy = card.dataset.rainy === '1';
+                const scene = card.dataset.scene;
+
+                const matchesQuery = !query || title.includes(query) || summary.includes(query) || location.includes(query) || tags.includes(query) || city.includes(query);
+                const matchesType = currentType === 'all' || type === currentType;
+                const matchesScene = currentScene === 'all' || scene === currentScene || (currentScene === 'family' && stroller) || (currentScene === 'rainy' && rainy);
+                const matchesCity = selectedCity === 'all' || city === selectedCity;
+                const matchesTag = currentTag === 'all' || tags.includes(currentTag.toLowerCase());
+
+                const matchesParking = !wantParking || parking;
+                const matchesStroller = !wantStroller || stroller;
+                const matchesRainy = !wantRainy || rainy;
+
+                let matchesDate = true;
                 if (selectedDate) {
-                    if (startDate && endDate) {
-                        dateMatch = (startDate <= selectedDate && selectedDate <= endDate);
-                    } else if (startDate) {
-                        dateMatch = (startDate === selectedDate);
-                    } else {
-                        dateMatch = true; // 常設・通年等は常にヒット
-                    }
+                    matchesDate = dateStr.includes(selectedDate) || dateStr.includes('通年') || dateStr.includes('常設');
                 }
 
-                if (typeMatch && tagMatch && searchMatch && dateMatch) {
+                if (matchesQuery && matchesType && matchesScene && matchesCity && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
                     card.classList.remove('hidden');
                     count++;
                 } else {
@@ -312,12 +405,99 @@
             }
         }
 
+        // Event Listeners for Filters
+        searchInput.addEventListener('input', filterEvents);
+        dateInput.addEventListener('change', filterEvents);
+        citySelect.addEventListener('change', filterEvents);
+        checkFreeParking.addEventListener('change', filterEvents);
+        checkStroller.addEventListener('change', filterEvents);
+        checkRainy.addEventListener('change', filterEvents);
+
         clearDateBtn.addEventListener('click', () => {
             dateInput.value = '';
             filterEvents();
         });
 
-        dateInput.addEventListener('change', filterEvents);
+        resetAllFilters.addEventListener('click', () => {
+            searchInput.value = '';
+            dateInput.value = '';
+            citySelect.value = 'all';
+            checkFreeParking.checked = false;
+            checkStroller.checked = false;
+            checkRainy.checked = false;
+            currentType = 'all';
+            currentScene = 'all';
+            currentTag = 'all';
+
+            typeButtons.forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            typeButtons[0].classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+
+            sceneButtons.forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+
+            tagButtons.forEach(b => {
+                b.classList.remove('bg-sky-100', 'text-sky-700');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            tagButtons[0].classList.add('bg-sky-100', 'text-sky-700');
+
+            filterEvents();
+        });
+
+        // Type Buttons
+        typeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeButtons.forEach(b => {
+                    b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                btn.classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+
+                currentType = btn.dataset.type;
+                filterEvents();
+            });
+        });
+
+        // Scene Buttons
+        sceneButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const isSelected = btn.classList.contains('bg-sky-600');
+                sceneButtons.forEach(b => {
+                    b.classList.remove('bg-sky-600', 'text-white');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+
+                if (!isSelected) {
+                    btn.classList.remove('bg-slate-100', 'text-slate-600');
+                    btn.classList.add('bg-sky-600', 'text-white');
+                    currentScene = btn.dataset.scene;
+                } else {
+                    currentScene = 'all';
+                }
+                filterEvents();
+            });
+        });
+
+        // Tag Buttons
+        tagButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tagButtons.forEach(b => {
+                    b.classList.remove('bg-sky-100', 'text-sky-700');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                btn.classList.add('bg-sky-100', 'text-sky-700');
+
+                currentTag = btn.dataset.tag;
+                filterEvents();
+            });
+        });
 
         // View Switcher (Grid vs Calendar)
         viewGridBtn.addEventListener('click', () => {
@@ -343,7 +523,7 @@
                 const calendarEl = document.getElementById('fullCalendarContainer');
                 calendarInstance = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
-                    initialDate: selectedDate || '2026-09-09',
+                    initialDate: '2026-09-09',
                     locale: 'ja',
                     headerToolbar: {
                         left: 'prev,next today',
@@ -385,36 +565,6 @@
                 setTimeout(() => { calendarInstance.render(); }, 100);
             }
         });
-
-        catButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                catButtons.forEach(b => {
-                    b.classList.remove('bg-sky-500', 'text-white');
-                    b.classList.add('bg-white/10', 'text-slate-200');
-                });
-                btn.classList.remove('bg-white/10', 'text-slate-200');
-                btn.classList.add('bg-sky-500', 'text-white');
-
-                currentType = btn.dataset.type;
-                filterEvents();
-            });
-        });
-
-        tagButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                tagButtons.forEach(b => {
-                    b.classList.remove('bg-white/20', 'text-white');
-                    b.classList.add('bg-white/10', 'text-slate-200');
-                });
-                btn.classList.remove('bg-white/10', 'text-slate-200');
-                btn.classList.add('bg-white/20', 'text-white');
-
-                currentTag = btn.dataset.tag;
-                filterEvents();
-            });
-        });
-
-        searchInput.addEventListener('input', filterEvents);
     });
 
     function closeModal() {

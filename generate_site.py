@@ -176,10 +176,15 @@ def generate_site():
     calendar_events_json = extract_calendar_events(events)
 
     all_tags_set = set()
+    cities_set = set()
     for event in events:
         tags_list = [t.strip() for t in event["tags"].split(",") if t.strip()]
         all_tags_set.update(tags_list)
+        if event.get("city"):
+            cities_set.add(event["city"].strip())
+
     all_tags = sorted(list(all_tags_set))
+    cities = sorted(list(cities_set))
 
     current_year = datetime.datetime.now().year
 
@@ -188,6 +193,7 @@ def generate_site():
         events=events,
         calendar_events_json=calendar_events_json,
         all_tags=all_tags,
+        cities=cities,
         current_year=current_year,
         base_url=""
     )
