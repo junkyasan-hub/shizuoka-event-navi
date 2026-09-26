@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if mode == 'create' %}新規追加{% else %}編集{% endif %} | 静岡県お出かけ・イベントナビ 管理画面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/admin" class="text-slate-400 hover:text-white font-bold text-xs">
+                    ← 管理画面一覧に戻る
+                </a>
+                <h1 class="text-base font-bold">{% if mode == 'create' %}➕ 新規イベント入力{% else %}✏️ イベント編集 (ID: #{{ event.id }}){% endif %}</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow">
+
+        <form action="{% if mode == 'create' %}/admin/create{% else %}/admin/edit/{{ event.id }}{% endif %}" method="POST" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
+
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="text-lg font-bold text-slate-900">基本情報設定</h2>
+            </div>
+
+            <!-- Title & Item Type -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="sm:col-span-3 space-y-1">
+                    <label class="text-xs font-bold text-slate-600">イベント名・施設名 <span class="text-rose-500">*</span></label>
+                    <input type="text" name="title" value="{{ event.title if event else '' }}" required placeholder="例: 駿府城公園 秋のオータムクラフト市"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">区分 <span class="text-rose-500">*</span></label>
+                    <select name="item_type" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="event" {% if event and event.item_type == 'event' %}selected{% endif %}>🎉 イベント</option>
+                        <option value="spot" {% if event and event.item_type == 'spot' %}selected{% endif %}>🏞️ 定番スポット</option>
+                        <option value="gourmet" {% if event and event.item_type == 'gourmet' %}selected{% endif %}>🍜 定番グルメ</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date Str & City -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2 space-y-1">
+                    <label class="text-xs font-bold text-slate-600">開催期間・日時表記 <span class="text-rose-500">*</span></label>
+                    <input type="text" name="date_str" value="{{ event.date_str if event else '' }}" required placeholder="例: 2026年10月10日(土) 〜 10月11日(日) 10:00〜16:00"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">市町名 <span class="text-rose-500">*</span></label>
+                    <input type="text" name="city" value="{{ event.city if event else '静岡市' }}" required placeholder="例: 静岡市, 浜松市, 沼津市"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Location & Address -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">会場・施設名称 <span class="text-rose-500">*</span></label>
+                    <input type="text" name="location" value="{{ event.location if event else '' }}" required placeholder="例: 駿府城公園 富士見広場"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">住所</label>
+                    <input type="text" name="address" value="{{ event.address if event else '' }}" placeholder="例: 静岡市葵区駿府城公園1-1"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Official URL & Image URL -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">公式WebサイトURL</label>
+                    <input type="url" name="official_url" value="{{ event.official_url if event else '' }}" placeholder="https://..."
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">画像URL</label>
+                    <input type="url" name="image_url" value="{{ event.image_url if event else 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' }}" placeholder="https://..."
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Fee & Organizer & Parking -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">料金</label>
+                    <input type="text" name="fee" value="{{ event.fee if event else '入場無料' }}" placeholder="例: 入場無料 / 1,000円"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">主催者名</label>
+                    <input type="text" name="organizer" value="{{ event.organizer if event else '' }}" placeholder="例: 実行委員会"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">駐車場情報</label>
+                    <input type="text" name="parking_info" value="{{ event.parking_info if event else 'あり（無料）' }}" placeholder="例: 無料駐車場 50台"
+                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Feature Checkboxes & Scene & Target Age -->
+            <div class="p-4 bg-slate-50 rounded-xl space-y-3 border border-slate-200/80">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block">こだわり機能・フラグ設定</label>
+                
+                <div class="flex flex-wrap items-center gap-6">
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="is_free_parking" value="1" {% if event and event.is_free_parking %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded">
+                        <span>🚗 駐車場無料</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="is_stroller_ok" value="1" {% if event and event.is_stroller_ok %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded">
+                        <span>👶 ベビーカー可</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="is_rainy_ok" value="1" {% if event and event.is_rainy_ok %}checked{% endif %} class="w-4 h-4 text-sky-600 rounded">
+                        <span>☔ 屋内・雨の日OK</span>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600">対象シーン</label>
+                        <select name="category_scene" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold">
+                            <option value="ファミリー向け" {% if event and event.category_scene == 'ファミリー向け' %}selected{% endif %}>👨‍👩‍👧‍👦 ファミリー向け</option>
+                            <option value="カップル向け" {% if event and event.category_scene == 'カップル向け' %}selected{% endif %}>👩‍❤️‍👨 カップル向け</option>
+                            <option value="一般" {% if not event or event.category_scene == '一般' %}selected{% endif %}>一般</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600">対象年齢</label>
+                        <input type="text" name="target_age" value="{{ event.target_age if event else '全年齢' }}" placeholder="例: 全年齢, 子ども向け"
+                            class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600">カード一覧用 概要文 (summary)</label>
+                <textarea name="summary" rows="2" placeholder="100文字程度の簡単な紹介文..."
+                    class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">{{ event.summary if event else '' }}</textarea>
+            </div>
+
+            <!-- Description -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600">詳細ページ用 本文 (description)</label>
+                <textarea name="description" rows="5" placeholder="イベントの見どころや詳細情報を記入してください..."
+                    class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">{{ event.description if event else '' }}</textarea>
+            </div>
+
+            <!-- Tags -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600">タグ (カンマ区切り)</label>
+                <input type="text" name="tags" value="{{ event.tags if event else '静岡イベント,お出かけ' }}" placeholder="例: 屋台,マルシェ,体験"
+                    class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                <a href="/admin" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-sm transition-all">
+                    キャンセル
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm shadow-md shadow-sky-500/20 transition-all">
+                    💾 保存して更新する
+                </button>
+            </div>
+
+        </form>
+
+    </main>
+
+</body>
+</html>

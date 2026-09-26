@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理画面 | 静岡県お出かけ・イベントナビ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center font-black text-lg">
+                    静
+                </div>
+                <h1 class="text-base sm:text-lg font-bold tracking-tight">静岡県お出かけ・イベントナビ 【管理画面】</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <form action="/admin/rebuild" method="POST" onsubmit="return confirm('静的サイト(dist)を一括更新します。よろしいですか？');">
+                    <button type="submit" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1.5">
+                        ⚡ 静的サイト再生成 (dist更新)
+                    </button>
+                </form>
+                <a href="/" target="_blank" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all">
+                    公開サイトを開く ↗
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow space-y-6">
+
+        {% if message %}
+        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-sm font-bold flex items-center justify-between shadow-sm">
+            <span>✅ {{ message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Top Actions Bar -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            
+            <form action="/admin" method="GET" class="flex-1 max-w-md flex gap-2">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="イベント名・市町・キーワードで検索..."
+                    class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <button type="submit" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl text-xs whitespace-nowrap hover:bg-slate-700">
+                    検索
+                </button>
+            </form>
+
+            <a href="/admin/create" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm shadow-md shadow-sky-500/20 text-center transition-all">
+                ➕ 新規イベントを追加する
+            </a>
+        </div>
+
+        <!-- Table List -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <span class="text-xs font-bold text-slate-500">登録件数: <span class="text-sky-600 text-sm font-extrabold">{{ events|length }}</span> 件</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
+                            <th class="p-4 w-16">ID</th>
+                            <th class="p-4 w-24">区分</th>
+                            <th class="p-4 min-w-[200px]">イベント名・施設名</th>
+                            <th class="p-4 w-28">市町</th>
+                            <th class="p-4 min-w-[180px]">開催日時・期間</th>
+                            <th class="p-4 w-28 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for event in events %}
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="p-4 text-xs font-mono font-bold text-slate-400">#{{ event.id }}</td>
+                            <td class="p-4">
+                                {% if event.item_type == 'spot' %}
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">定番スポット</span>
+                                {% elif event.item_type == 'gourmet' %}
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">定番グルメ</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 bg-sky-100 text-sky-800 text-[10px] font-bold rounded">イベント</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4 font-bold text-slate-900">
+                                {{ event.title }}
+                                {% if event.is_ended %}
+                                <span class="ml-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[10px] rounded font-normal">[終了]</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4 text-xs font-semibold text-slate-600">📍 {{ event.city }}</td>
+                            <td class="p-4 text-xs font-medium text-slate-600">📅 {{ event.date_str }}</td>
+                            <td class="p-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="/admin/edit/{{ event.id }}" class="px-2.5 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold rounded-lg text-xs transition-colors">
+                                        ✏️ 編集
+                                    </a>
+                                    <form action="/admin/delete/{{ event.id }}" method="POST" onsubmit="return confirm('本当に削除してよろしいですか？');">
+                                        <button type="submit" class="px-2.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-lg text-xs transition-colors">
+                                            🗑️ 削除
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>

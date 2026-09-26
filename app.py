@@ -3,9 +3,10 @@ import os
 import datetime
 import json
 import re
-from fastapi import FastAPI, Request, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, Query, Form
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+import generate_site
 
 DB_PATH = "events.db"
 TEMPLATES_DIR = "templates"
@@ -268,6 +269,165 @@ async def api_items(
         date=date
     )
     return JSONResponse(content={"count": len(items), "items": items, "calendar_events": json.loads(extract_calendar_events(items))})
+
+# --- ADMIN ROUTES FOR MANUAL INSERT, EDIT, DELETE & REBUILD ---
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard(request: Request, search: str = Query(""), message: str = Query("")):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if search:
+        query = f"%{search.strip()}%"
+        cursor.execute("SELECT * FROM events WHERE title LIKE ? OR city LIKE ? OR location LIKE ? ORDER BY id DESC", (query, query, query))
+    else:
+        cursor.execute("SELECT * FROM events ORDER BY id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    items = [enrich_item(row) for row in rows]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={"events": items, "search_query": search, "message": message}
+    )
+
+@app.get("/admin/create", response_class=HTMLResponse)
+async def admin_create_form(request: Request):
+    return templates.TemplateResponse(request=request, name="admin_form.html", context={"mode": "create", "event": None})
+
+@app.post("/admin/create")
+async def admin_create_submit(
+    title: str = Form(...),
+    item_type: str = Form(...),
+    date_str: str = Form(...),
+    city: str = Form(...),
+    location: str = Form(...),
+    address: str = Form(""),
+    official_url: str = Form(""),
+    image_url: str = Form(""),
+    fee: str = Form(""),
+    organizer: str = Form(""),
+    parking_info: str = Form(""),
+    is_free_parking: int = Form(0),
+    is_stroller_ok: int = Form(0),
+    is_rainy_ok: int = Form(0),
+    category_scene: str = Form("一般"),
+    target_age: str = Form("全年齢"),
+    summary: str = Form(""),
+    description: str = Form(""),
+    tags: str = Form("")
+):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    google_maps_url = f"https://maps.google.com/?q={city} {location}"
+    cursor.execute("""
+        INSERT INTO events (
+            item_type, title, date_str, location, city, address, lat, lng, google_maps_url, official_url,
+            tags, summary, description, image_url, fee, organizer, parking_info, target_age,
+            is_free_parking, is_stroller_ok, is_rainy_ok, category_scene
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 34.9769, 138.3831, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        item_type, title.strip(), date_str.strip(), location.strip(), city.strip(), address.strip(),
+        google_maps_url, official_url.strip(), tags.strip(), summary.strip(), description.strip(),
+        image_url.strip() or "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",
+        fee.strip(), organizer.strip(), parking_info.strip(), target_age.strip(),
+        is_free_parking, is_stroller_ok, is_rainy_ok, category_scene.strip()
+    ))
+    conn.commit()
+    conn.close()
+
+    try:
+        generate_site.generate_site()
+    except Exception as e:
+        print(f"Error rebuilding static site: {e}")
+
+    return RedirectResponse(url="/admin?message=新しいイベントを保存し、静的サイト(dist)を更新しました！", status_code=303)
+
+@app.get("/admin/edit/{item_id}", response_class=HTMLResponse)
+async def admin_edit_form(request: Request, item_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM events WHERE id = ?", (item_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return RedirectResponse(url="/admin?message=指定されたイベントが見つかりませんでした", status_code=303)
+
+    return templates.TemplateResponse(request=request, name="admin_form.html", context={"mode": "edit", "event": dict(row)})
+
+@app.post("/admin/edit/{item_id}")
+async def admin_edit_submit(
+    item_id: int,
+    title: str = Form(...),
+    item_type: str = Form(...),
+    date_str: str = Form(...),
+    city: str = Form(...),
+    location: str = Form(...),
+    address: str = Form(""),
+    official_url: str = Form(""),
+    image_url: str = Form(""),
+    fee: str = Form(""),
+    organizer: str = Form(""),
+    parking_info: str = Form(""),
+    is_free_parking: int = Form(0),
+    is_stroller_ok: int = Form(0),
+    is_rainy_ok: int = Form(0),
+    category_scene: str = Form("一般"),
+    target_age: str = Form("全年齢"),
+    summary: str = Form(""),
+    description: str = Form(""),
+    tags: str = Form("")
+):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE events SET
+            item_type = ?, title = ?, date_str = ?, location = ?, city = ?, address = ?,
+            official_url = ?, tags = ?, summary = ?, description = ?, image_url = ?,
+            fee = ?, organizer = ?, parking_info = ?, target_age = ?,
+            is_free_parking = ?, is_stroller_ok = ?, is_rainy_ok = ?, category_scene = ?
+        WHERE id = ?
+    """, (
+        item_type, title.strip(), date_str.strip(), location.strip(), city.strip(), address.strip(),
+        official_url.strip(), tags.strip(), summary.strip(), description.strip(), image_url.strip(),
+        fee.strip(), organizer.strip(), parking_info.strip(), target_age.strip(),
+        is_free_parking, is_stroller_ok, is_rainy_ok, category_scene.strip(),
+        item_id
+    ))
+    conn.commit()
+    conn.close()
+
+    try:
+        generate_site.generate_site()
+    except Exception as e:
+        print(f"Error rebuilding static site: {e}")
+
+    return RedirectResponse(url=f"/admin?message=イベント情報(ID: #{item_id})を更新し、静的サイト(dist)を再生成しました！", status_code=303)
+
+@app.post("/admin/delete/{item_id}")
+async def admin_delete_submit(item_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM events WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+
+    try:
+        generate_site.generate_site()
+    except Exception as e:
+        print(f"Error rebuilding static site: {e}")
+
+    return RedirectResponse(url=f"/admin?message=イベント(ID: #{item_id})を削除し、静的サイト(dist)を更新しました！", status_code=303)
+
+@app.post("/admin/rebuild")
+async def admin_rebuild_submit():
+    try:
+        generate_site.generate_site()
+        msg = "静的サイト(dist)の一括生成が正常に完了しました！"
+    except Exception as e:
+        msg = f"再生成中にエラーが発生しました: {e}"
+    return RedirectResponse(url=f"/admin?message={msg}", status_code=303)
 
 if __name__ == "__main__":
     import uvicorn
