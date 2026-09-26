@@ -1,5 +1,0 @@
-(80, 'よりみちマルシェ 【2026年9月】', '2026年9月9日(水) 10:30〜15:00', '浜松市', 'https://loco.kufu.jp/shizuoka/events/2739')
-(81, '清水港 ビールクルーズ【2026年9月・10月】', '2026年9月11日(金) 〜 10月24日(土)', '静岡市', 'https://loco.kufu.jp/shizuoka/events/2741')
-(82, 'vol.70イシモクマルシェ市場', '2026年9月12日(土) 10:00〜14:00', '藤枝市', 'https://loco.kufu.jp/shizuoka/events/2706')
-(83, 'グランシップ静岡能\u3000能楽入門公演', '2026年9月12日(土) 14:00〜16:00', '静岡市', 'https://loco.kufu.jp/shizuoka/events/2730')
-(84, 'TOKYO SHIMAZAKE DROP', '2026年9月12日(土) 15:00〜20:00', '静岡市', 'https://loco.kufu.jp/shizuoka/events/2733')

@@ -1,4 +1,0 @@
-INFO:     127.0.0.1:62004 - "GET /api/items HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62004 - "GET /api/items?date=2026-10-04 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65321 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65321 - "GET /?item_type=all&scene=all&search=&date=2026-10-17&city=all HTTP/1.1" 200 OK

@@ -1,0 +1,13 @@
+# 開発用の一時ファイル・ログ
+_*
+*.log
+*.tmp
+__pycache__/
+
+# 環境変数（APIキーを含むファイル）
+.env
+.env.local
+
+# 仮想環境
+venv/
+.venv/

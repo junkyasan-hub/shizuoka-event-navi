@@ -1,9 +1,0 @@
-INFO:     127.0.0.1:51933 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62006 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61512 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:61645 - "GET /api/items HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64376 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53651 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53651 - "GET /api/items?date=2026-09-13 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53651 - "GET /api/items?date=2026-04-19 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53651 - "GET /api/items?date=2026-01-01 HTTP/1.1" 200 OK
