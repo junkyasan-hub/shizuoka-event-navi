@@ -149,21 +149,26 @@ def run_crawler():
                 raw_summary = (row.get("説明") or "").strip().replace("\r\n", " ").replace("\n", " ")[:120]
                 raw_description = (row.get("説明") or "").strip()
 
-                # Gemini API リライト
-                ai_res = ai_rewriter.rewrite_event_info(
+                city = row.get("市区町村名", "浜松市").strip() or "浜松市"
+
+                # Gemini API リライト & 事実確認（ファクトチェック）
+                ai_res = ai_rewriter.verify_and_rewrite_event(
                     raw_title=raw_title,
                     raw_summary=raw_summary,
-                    raw_description=raw_description
+                    raw_description=raw_description,
+                    city=city
                 )
 
-                date_str = format_date_str(
+                if not ai_res.get("is_verified", True):
+                    logger.warning(f"実在性が確認できないイベントのためスキップ: {raw_title}")
+                    continue
+
+                date_str = ai_res.get("date_str") or format_date_str(
                     start_date,
                     row.get("終了日", "").strip(),
                     row.get("開始時間", "").strip(),
                     row.get("終了時間", "").strip()
                 )
-
-                city = row.get("市区町村名", "浜松市").strip() or "浜松市"
 
                 try:
                     lat = float(row.get("緯度", 34.7108))

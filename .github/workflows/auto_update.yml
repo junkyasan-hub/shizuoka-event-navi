@@ -33,6 +33,12 @@ jobs:
         run: |
           python crawler.py
 
+      - name: Audit & Cleanup Event Data (AI Fact Check)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python audit_and_cleanup_events.py
+
       - name: Regenerate Static HTML Site
         run: |
           python generate_site.py
