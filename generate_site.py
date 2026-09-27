@@ -52,11 +52,12 @@ def parse_event_dates(date_str, item_type='event'):
         return s_iso, e_iso
     return '1970-01-01', '2099-12-31'
 
-def parse_event_status(date_str):
-    if "通年" in date_str or "常設" in date_str:
+def parse_event_status(date_str, item_type='event', end_iso='2099-12-31'):
+    if item_type in ('spot', 'gourmet') or "通年" in date_str or "常設" in date_str:
         return False, "営業中"
     
-    if "2026年4月" in date_str or "2026年5月" in date_str or "2026年8月" in date_str:
+    today_iso = datetime.date.today().isoformat()
+    if end_iso != '2099-12-31' and end_iso < today_iso:
         return True, "終了"
     
     return False, "開催予定"
@@ -124,13 +125,13 @@ def get_smart_shizuoka_image(title="", summary="", tags="", city="", item_type="
 
 def enrich_item(item):
     item = dict(item)
-    is_ended, status_label = parse_event_status(item["date_str"])
-    item["is_ended"] = is_ended
-    item["status_label"] = status_label
-    
     start_iso, end_iso = parse_event_dates(item["date_str"], item.get("item_type", "event"))
     item["start_iso"] = start_iso
     item["end_iso"] = end_iso
+
+    is_ended, status_label = parse_event_status(item["date_str"], item.get("item_type", "event"), end_iso)
+    item["is_ended"] = is_ended
+    item["status_label"] = status_label
     
     # 静岡のジャンル・キーワード別スマート高画質画像の設定
     if not item.get("image_url") or "unsplash.com" in item.get("image_url", ""):
