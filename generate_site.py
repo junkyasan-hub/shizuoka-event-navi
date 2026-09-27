@@ -61,6 +61,67 @@ def parse_event_status(date_str):
     
     return False, "開催予定"
 
+SHIZUOKA_SMART_IMAGES = {
+    "fuji": "https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=800&q=80",
+    "hanabi": "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
+    "matsuri": "https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?auto=format&fit=crop&w=800&q=80",
+    "tea": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
+    "gourmet": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80",
+    "unagi": "https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=800&q=80",
+    "onsen": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
+    "ocean": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+    "history": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=800&q=80",
+    "shrine": "https://images.unsplash.com/photo-1607548545892-28df417c0c1b?auto=format&fit=crop&w=800&q=80",
+    "music": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+    "sports": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
+    "dance": "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80",
+    "yoga": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80",
+    "kids": "https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80",
+    "craft": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80",
+    "autumn": "https://images.unsplash.com/photo-1507781997189-27715f5c35eb?auto=format&fit=crop&w=800&q=80",
+    "default": "https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=800&q=80"
+}
+
+def get_smart_shizuoka_image(title="", summary="", tags="", city="", item_type=""):
+    text = (str(title) + " " + str(summary) + " " + str(tags) + " " + str(city)).lower()
+    
+    if any(k in text for k in ["富士", "夢テラス", "樹空の森", "朝霧"]):
+        return SHIZUOKA_SMART_IMAGES["fuji"]
+    if any(k in text for k in ["花火", "キャンドル", "ライトアップ", "イルミネーション", "ナイト"]):
+        return SHIZUOKA_SMART_IMAGES["hanabi"]
+    if any(k in text for k in ["まつり", "祭", "大たこ", "人形劇", "大道芸", "神楽"]):
+        return SHIZUOKA_SMART_IMAGES["matsuri"]
+    if any(k in text for k in ["茶", "緑茶", "茶会", "玉露"]):
+        return SHIZUOKA_SMART_IMAGES["tea"]
+    if any(k in text for k in ["マグロ", "寿司", "海鮮", "サカナ", "キンメダイ", "さわやか", "ハンバーグ", "やきそば", "カキ", "牡蠣", "グルメ", "みかん"]):
+        return SHIZUOKA_SMART_IMAGES["gourmet"]
+    if any(k in text for k in ["うなぎ", "鰻"]):
+        return SHIZUOKA_SMART_IMAGES["unagi"]
+    if any(k in text for k in ["温泉", "足湯", "修善寺", "熱海"]):
+        return SHIZUOKA_SMART_IMAGES["onsen"]
+    if any(k in text for k in ["海", "海岸", "港", "サンセット", "ビーチ", "マリーン", "ボート", "城ヶ崎"]):
+        return SHIZUOKA_SMART_IMAGES["ocean"]
+    if any(k in text for k in ["城", "万葉", "東照宮", "駿府"]):
+        return SHIZUOKA_SMART_IMAGES["history"]
+    if any(k in text for k in ["大社", "神社", "寺", "可睡斎"]):
+        return SHIZUOKA_SMART_IMAGES["shrine"]
+    if any(k in text for k in ["ヨガ", "ピラティス", "ストレッチ"]):
+        return SHIZUOKA_SMART_IMAGES["yoga"]
+    if any(k in text for k in ["ダンス", "バレエ", "社交ダンス"]):
+        return SHIZUOKA_SMART_IMAGES["dance"]
+    if any(k in text for k in ["音楽", "ピアノ", "リサイタル", "ジャズ", "吹奏楽", "コンサート", "交響", "ウィーン", "ライアー"]):
+        return SHIZUOKA_SMART_IMAGES["music"]
+    if any(k in text for k in ["スポーツ", "ボクシング", "相撲", "合気道", "レスリング", "ランニング", "卓球", "アーチェリー", "テニス", "ボートレース", "清走中"]):
+        return SHIZUOKA_SMART_IMAGES["sports"]
+    if any(k in text for k in ["こども", "ちびっこ", "親子", "わんぱく", "キッズ", "宇宙", "天文台", "星空", "探検"]):
+        return SHIZUOKA_SMART_IMAGES["kids"]
+    if any(k in text for k in ["クラフト", "マルシェ", "染め", "体験", "工作", "絵手紙", "展示", "写真"]):
+        return SHIZUOKA_SMART_IMAGES["craft"]
+    if any(k in text for k in ["もみじ", "紅葉", "秋", "菊花", "ススキ"]):
+        return SHIZUOKA_SMART_IMAGES["autumn"]
+        
+    return SHIZUOKA_SMART_IMAGES["default"]
+
 def enrich_item(item):
     item = dict(item)
     is_ended, status_label = parse_event_status(item["date_str"])
@@ -71,6 +132,16 @@ def enrich_item(item):
     item["start_iso"] = start_iso
     item["end_iso"] = end_iso
     
+    # 静岡のジャンル・キーワード別スマート高画質画像の設定
+    if not item.get("image_url") or "unsplash.com" in item.get("image_url", ""):
+        item["image_url"] = get_smart_shizuoka_image(
+            title=item.get("title", ""),
+            summary=item.get("summary", ""),
+            tags=item.get("tags", ""),
+            city=item.get("city", ""),
+            item_type=item.get("item_type", "")
+        )
+
     if not item.get("official_url") or "example.com" in item.get("official_url", ""):
         item["official_url"] = CITY_OFFICIAL_MAP.get(item["city"], "https://www.pref.shizuoka.jp/")
 
