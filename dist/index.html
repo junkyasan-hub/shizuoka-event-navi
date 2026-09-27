@@ -60,6 +60,8 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 
 </head>
@@ -96,49 +98,267 @@
     <!-- Main Content -->
     <main class="flex-grow">
         
-<!-- Top Sticky Sub-Header with Category & Scene Tabs -->
-<div class="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            
-            <!-- Type Tabs -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="typeTabs">
-                <button data-type="all" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm bg-sky-600 text-white shadow-sky-500/20">
-                    🌟 すべて
+<!-- Hero Banner with Integrated Search & Region Quick Chips -->
+<div class="relative bg-gradient-to-br from-slate-900 via-sky-950 to-indigo-950 text-white border-b border-sky-900/50 py-10 px-4 sm:px-6 lg:px-8 shadow-xl">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <div class="space-y-2 text-center sm:text-left max-w-3xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-sky-500/20 text-sky-300 text-xs font-bold rounded-full border border-sky-400/30 backdrop-blur-md">
+                ✨ 静岡県公式オープンデータ ＆ AI自動ファクトチェック連動
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                今週末どこ行く？ 静岡県お出かけ・イベントガイド
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                静岡市・沼津・熱海・伊豆・浜松など、県内全域の最新イベント・定番観光スポット・ご当地グルメ情報を全自動集約！
+            </p>
+        </div>
+
+        <!-- Main Integrated Search Input -->
+        <div class="max-w-2xl relative">
+            <div class="relative flex items-center">
+                <svg class="w-5 h-5 absolute left-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="キーワード・イベント名・会場・エリアで探す（例: 花火, クラフト, 駿府城, 沼津）" class="w-full pl-12 pr-10 py-3.5 bg-white text-slate-900 rounded-2xl text-sm font-medium shadow-lg border border-white/20 focus:outline-none focus:ring-4 focus:ring-sky-500/50 transition-all placeholder:text-slate-400">
+                <button id="heroClearSearchBtn" class="hidden absolute right-4 text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
+            </div>
+        </div>
+
+        <!-- Region Quick Chips (エリア直感切り替え) -->
+        <div class="space-y-2 pt-1">
+            <label class="text-[11px] font-bold text-sky-200 uppercase tracking-wider block">📍 エリアで絞り込み</label>
+            <div class="flex flex-wrap items-center gap-2" id="regionChips">
+                <button data-region="all" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md shadow-sky-500/30">
+                    📍 静岡県内 全エリア
                 </button>
-                <button data-type="event" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    🎉 イベント
+                <button data-region="chubu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
+                    🗻 富士・静岡市 (中部)
                 </button>
-                <button data-type="spot" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    🏞️ 定番スポット
+                <button data-region="tobu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
+                    🌊 沼津・三島・富士 (東部)
                 </button>
-                <button data-type="gourmet" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    🍜 定番グルメ
+                <button data-region="izu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
+                    ♨️ 熱海・伊東・伊豆 (伊豆)
+                </button>
+                <button data-region="seibu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
+                    🏯 浜松・遠州 (西部)
                 </button>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Scene Pills & Mobile Filter Button -->
-            <div class="flex items-center justify-between md:justify-end gap-2 shrink-0">
-                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="scenePills">
-                    <button data-scene="family" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                        👨‍👩‍👧‍👦 ファミリー
-                    </button>
-                    <button data-scene="couple" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                        👩‍❤️‍👨 カップル
-                    </button>
-                    <button data-scene="rainy" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                        ☔ 雨の日OK
-                    </button>
+<!-- Featured Showcase Carousel / Section -->
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <span class="text-xl">🔥</span>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">注目のピックアップイベント</h2>
+            <span class="px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider">FEATURED</span>
+        </div>
+        <span class="text-xs font-semibold text-slate-500 hidden sm:inline">静岡県内のおすすめ主要イベント</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <a href="events/4.html" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-200/80 transition-all flex flex-col bg-white">
+            <div class="h-36 overflow-hidden relative bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="三保松原（世界文化遺産 富士山構成資産）" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute top-2.5 left-2.5">
+                    <span class="px-2 py-0.5 bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-bold rounded-md shadow-sm">
+                        🌟 注目
+                    </span>
                 </div>
+                <div class="absolute bottom-2.5 right-2.5">
+                    <span class="px-2 py-0.5 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold rounded-md">
+                        📍 静岡市
+                    </span>
+                </div>
+            </div>
+            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                <div>
+                    <span class="text-[10px] font-bold text-sky-600 block">📅 通年（24時間散策可能）</span>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
+                        三保松原（世界文化遺産 富士山構成資産）
+                    </h3>
+                </div>
+                <div class="flex items-center justify-between text-[11px] pt-2 text-slate-500 border-t border-slate-100">
+                    <span class="truncate max-w-[120px]">📍 三保松原海岸</span>
+                    <span class="font-bold text-sky-600">詳細 ➔</span>
+                </div>
+            </div>
+        </a>
+        
+        <a href="events/5.html" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-200/80 transition-all flex flex-col bg-white">
+            <div class="h-36 overflow-hidden relative bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1742508871760-9d70585d6006?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="日本平夢テラス（360度大パノラマ展望台）" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute top-2.5 left-2.5">
+                    <span class="px-2 py-0.5 bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-bold rounded-md shadow-sm">
+                        🌟 注目
+                    </span>
+                </div>
+                <div class="absolute bottom-2.5 right-2.5">
+                    <span class="px-2 py-0.5 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold rounded-md">
+                        📍 静岡市
+                    </span>
+                </div>
+            </div>
+            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                <div>
+                    <span class="text-[10px] font-bold text-sky-600 block">📅 9:00〜17:00（土曜日は21:00まで）</span>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
+                        日本平夢テラス（360度大パノラマ展望台）
+                    </h3>
+                </div>
+                <div class="flex items-center justify-between text-[11px] pt-2 text-slate-500 border-t border-slate-100">
+                    <span class="truncate max-w-[120px]">📍 日本平山頂</span>
+                    <span class="font-bold text-sky-600">詳細 ➔</span>
+                </div>
+            </div>
+        </a>
+        
+        <a href="events/7.html" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-200/80 transition-all flex flex-col bg-white">
+            <div class="h-36 overflow-hidden relative bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="炭焼きレストランさわやか げんこつハンバーグ" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute top-2.5 left-2.5">
+                    <span class="px-2 py-0.5 bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-bold rounded-md shadow-sm">
+                        🌟 注目
+                    </span>
+                </div>
+                <div class="absolute bottom-2.5 right-2.5">
+                    <span class="px-2 py-0.5 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold rounded-md">
+                        📍 静岡市
+                    </span>
+                </div>
+            </div>
+            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                <div>
+                    <span class="text-[10px] font-bold text-sky-600 block">📅 11:00〜22:00</span>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
+                        炭焼きレストランさわやか げんこつハンバーグ
+                    </h3>
+                </div>
+                <div class="flex items-center justify-between text-[11px] pt-2 text-slate-500 border-t border-slate-100">
+                    <span class="truncate max-w-[120px]">📍 静岡県内全34店舗</span>
+                    <span class="font-bold text-sky-600">詳細 ➔</span>
+                </div>
+            </div>
+        </a>
+        
+        <a href="events/830.html" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-200/80 transition-all flex flex-col bg-white">
+            <div class="h-36 overflow-hidden relative bg-slate-100">
+                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="大道芸ワールドカップ in 静岡 2026" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute top-2.5 left-2.5">
+                    <span class="px-2 py-0.5 bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-bold rounded-md shadow-sm">
+                        🌟 注目
+                    </span>
+                </div>
+                <div class="absolute bottom-2.5 right-2.5">
+                    <span class="px-2 py-0.5 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold rounded-md">
+                        📍 静岡市
+                    </span>
+                </div>
+            </div>
+            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                <div>
+                    <span class="text-[10px] font-bold text-sky-600 block">📅 2026年11月1日(日) 〜 11月3日(火・祝) 10:00〜20:30</span>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
+                        大道芸ワールドカップ in 静岡 2026
+                    </h3>
+                </div>
+                <div class="flex items-center justify-between text-[11px] pt-2 text-slate-500 border-t border-slate-100">
+                    <span class="truncate max-w-[120px]">📍 駿府城公園および静岡市民文化会館周辺・街なか</span>
+                    <span class="font-bold text-sky-600">詳細 ➔</span>
+                </div>
+            </div>
+        </a>
+        
+    </div>
+</div>
 
-                <button id="mobileSidebarToggle" class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
-                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                    </svg>
-                    条件絞り込み
+
+<!-- Prominent Date Filter Bar (フィード直上・ワンタップ切り替え) -->
+<div class="bg-slate-50 border-y border-slate-200 py-3 px-4 sm:px-6 lg:px-8 mt-6">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        
+        <!-- One-Tap Date Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5" id="topDatePresets">
+            <span class="text-xs font-bold text-slate-400 whitespace-nowrap hidden lg:inline">📅 期間:</span>
+            <button data-preset="all" class="date-preset-btn px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-sky-600 text-white shadow-sm shadow-sky-500/20">
+                🌟 全期間
+            </button>
+            <button data-preset="today" class="date-preset-btn px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+                ⚡ 今日開催
+            </button>
+            <button data-preset="weekend" class="date-preset-btn px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+                🎡 今週末
+            </button>
+            <button data-preset="1week" class="date-preset-btn px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+                🗓️ 今週(7日間)
+            </button>
+            <button data-preset="1month" class="date-preset-btn px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+                🍂 今月(30日間)
+            </button>
+        </div>
+
+        <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+            <span class="text-xs font-bold text-slate-500">
+                該当 <span id="visibleCount" class="text-sky-600 font-extrabold text-base">660</span> 件
+            </span>
+
+            <div class="inline-flex rounded-xl bg-slate-200/80 p-1 border border-slate-300/60">
+                <button id="viewGridBtn" class="px-3 py-1 rounded-lg text-xs font-bold shadow bg-white text-sky-600 flex items-center gap-1 transition-all">
+                    📋 カード
+                </button>
+                <button id="viewCalendarBtn" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-1 transition-all">
+                    📅 カレンダー
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Type & Scene Filter Sub-Bar -->
+<div class="bg-white border-b border-slate-200 py-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <!-- Type Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="typeTabs">
+            <button data-type="all" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-sm bg-sky-600 text-white shadow-sky-500/20">
+                🌟 すべて
+            </button>
+            <button data-type="event" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                🎉 イベント
+            </button>
+            <button data-type="spot" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                🏞️ 定番スポット
+            </button>
+            <button data-type="gourmet" class="cat-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                🍜 定番グルメ
+            </button>
+        </div>
+
+        <!-- Scene Pills & Mobile Filter Button -->
+        <div class="flex items-center justify-between md:justify-end gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="scenePills">
+                <button data-scene="family" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    👨‍👩‍👧‍👦 ファミリー
+                </button>
+                <button data-scene="couple" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    👩‍❤️‍👨 カップル
+                </button>
+                <button data-scene="rainy" class="scene-pill-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    ☔ 雨の日OK
                 </button>
             </div>
 
+            <button id="mobileSidebarToggle" class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
+                <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                条件絞り込み
+            </button>
         </div>
     </div>
 </div>
@@ -160,31 +380,14 @@
                     </h2>
                 </div>
 
-                <!-- Date Range Filter (期間指定検索) -->
+                <!-- Date Range Inputs (日付入力) -->
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 開催期間で検索</label>
-                        <span id="activePresetBadge" class="text-[10px] font-extrabold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100">今日から1週間</span>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">📅 日付を直接指定</label>
+                        <span id="activePresetBadge" class="text-[10px] font-extrabold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100">全期間</span>
                     </div>
 
-                    <!-- Quick Preset Buttons -->
-                    <div class="grid grid-cols-2 gap-1.5">
-                        <button type="button" data-preset="1week" class="date-preset-btn px-2 py-1.5 bg-sky-600 text-white rounded-xl text-xs font-bold text-center transition-all shadow-sm">
-                            今日から1週間
-                        </button>
-                        <button type="button" data-preset="weekend" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
-                            今週末
-                        </button>
-                        <button type="button" data-preset="1month" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
-                            今月
-                        </button>
-                        <button type="button" data-preset="all" class="date-preset-btn px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold text-center transition-all">
-                            全期間 (解除)
-                        </button>
-                    </div>
-
-                    <!-- Start & End Date Inputs -->
-                    <div class="space-y-2 pt-1">
+                    <div class="space-y-2">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[10px] font-semibold text-slate-500 block mb-1">開始日</label>
@@ -195,7 +398,7 @@
                                 <input type="date" id="endDateInput" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
                             </div>
                         </div>
-                        <button id="clearDateBtn" class="text-xs font-semibold text-sky-600 hover:underline inline-block pt-1">期間指定を全解除</button>
+                        <button id="clearDateBtn" class="text-xs font-semibold text-sky-600 hover:underline inline-block pt-1">日付指定を解除</button>
                     </div>
                 </div>
 
@@ -221,7 +424,7 @@
 
                 <!-- City Filter Dropdown -->
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">エリア選択</label>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">市区町村で絞り込み</label>
                     <select id="citySelect" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="all">静岡県内 全エリア</option>
                         
@@ -333,40 +536,8 @@
             </div>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- Right Main Content -->
         <main class="lg:col-span-3 space-y-6">
-
-            <!-- Control Bar: Keyword Search & View Switcher -->
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                
-                <!-- Keyword Input -->
-                <div class="relative flex-1">
-                    <input type="text" id="searchInput" placeholder="スポット名・キーワード・住所で検索..." 
-                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- View Switcher & Result Count -->
-                <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0">
-                    <span class="text-xs font-bold text-slate-500">
-                        該当 <span id="visibleCount" class="text-sky-600 font-extrabold text-base">660</span> 件
-                    </span>
-
-                    <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                        <button id="viewGridBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold shadow bg-white text-sky-600 flex items-center gap-1.5 transition-all">
-                            📋 カード一覧
-                        </button>
-                        <button id="viewCalendarBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-1.5 transition-all">
-                            📅 カレンダー
-                        </button>
-                    </div>
-                </div>
-
-            </div>
 
             <!-- Card Grid View -->
             <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -51492,7 +51663,6 @@
     </div>
 </div>
 
-
     </main>
 
     <!-- Footer -->
@@ -51535,6 +51705,14 @@
     let currentType = 'all';
     let currentScene = 'all';
     let currentTag = 'all';
+    let currentRegion = 'all';
+
+    const REGION_MAP = {
+        'chubu': ['静岡市', '焼津市', '藤枝市', '島田市', '榛原郡', '志太郡'],
+        'tobu': ['沼津市', '三島市', '富士市', '富士宮市', '御殿場市', '裾野市', '駿東郡'],
+        'izu': ['熱海市', '伊東市', '伊豆市', '伊豆の国市', '下田市', '賀茂郡'],
+        'seibu': ['浜松市', '磐田市', '袋井市', '掛川市', '湖西市', '菊川市', '御前崎市', '周智郡']
+    };
 
     function formatISO(d) {
         const y = d.getFullYear();
@@ -51555,6 +51733,7 @@
         const viewGridBtn = document.getElementById('viewGridBtn');
         const viewCalendarBtn = document.getElementById('viewCalendarBtn');
         const searchInput = document.getElementById('searchInput');
+        const heroClearSearchBtn = document.getElementById('heroClearSearchBtn');
         const startDateInput = document.getElementById('startDateInput');
         const endDateInput = document.getElementById('endDateInput');
         const clearDateBtn = document.getElementById('clearDateBtn');
@@ -51574,35 +51753,37 @@
         const sceneButtons = document.querySelectorAll('.scene-pill-btn');
         const tagButtons = document.querySelectorAll('.tag-btn');
         const presetButtons = document.querySelectorAll('.date-preset-btn');
+        const regionChipButtons = document.querySelectorAll('.region-chip-btn');
 
-        // ベースとなる基準日付の決定（現在日付）
         let baseToday = new Date();
-        // 開発データが2026年中心の場合でも基準日を適切に維持
         if (baseToday.getFullYear() < 2026) {
-            baseToday = new Date(2026, 8, 27); // 2026年9月27日
+            baseToday = new Date(2026, 8, 27);
         }
 
-        // 初期状態では「全期間」を表示し、ユーザーが「今日から1週間」「今月」等をワンタップで絞り込めるようにする
+        // 初期表示は「全期間」
         setPreset('all');
 
         function setPreset(presetType) {
             presetButtons.forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'shadow-sm');
-                b.classList.add('bg-slate-100', 'text-slate-600');
+                b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                b.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
             });
 
-            const activeBtn = Array.from(presetButtons).find(b => b.dataset.preset === presetType);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
-                activeBtn.classList.add('bg-sky-600', 'text-white', 'shadow-sm');
-            }
+            const activeBtns = Array.from(presetButtons).filter(b => b.dataset.preset === presetType);
+            activeBtns.forEach(activeBtn => {
+                activeBtn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+                activeBtn.classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+            });
 
-            if (presetType === '1week') {
+            if (presetType === 'today') {
+                startDateInput.value = formatISO(baseToday);
+                endDateInput.value = formatISO(baseToday);
+                activePresetBadge.textContent = '今日開催';
+            } else if (presetType === '1week') {
                 startDateInput.value = formatISO(baseToday);
                 endDateInput.value = formatISO(addDays(baseToday, 7));
-                activePresetBadge.textContent = '今日から1週間';
+                activePresetBadge.textContent = '今週(7日間)';
             } else if (presetType === 'weekend') {
-                // 次の土曜日と日曜日
                 const day = baseToday.getDay();
                 const diffToSat = (6 - day + 7) % 7;
                 const sat = addDays(baseToday, diffToSat);
@@ -51622,12 +51803,44 @@
             filterEvents();
         }
 
+        // Search Input Handling
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value.trim()) {
+                heroClearSearchBtn.classList.remove('hidden');
+            } else {
+                heroClearSearchBtn.classList.add('hidden');
+            }
+            filterEvents();
+        });
+
+        heroClearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            heroClearSearchBtn.classList.add('hidden');
+            filterEvents();
+        });
+
+        // Region Chip Handling
+        regionChipButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                regionChipButtons.forEach(b => {
+                    b.classList.remove('bg-sky-500', 'text-white', 'shadow-md', 'shadow-sky-500/30');
+                    b.classList.add('bg-white/10', 'hover:bg-white/20', 'text-white', 'border', 'border-white/15');
+                });
+                btn.classList.remove('bg-white/10', 'hover:bg-white/20', 'text-white', 'border', 'border-white/15');
+                btn.classList.add('bg-sky-500', 'text-white', 'shadow-md', 'shadow-sky-500/30');
+                
+                currentRegion = btn.dataset.region;
+                citySelect.value = 'all'; // リセット
+                filterEvents();
+            });
+        });
+
         // Mobile Sidebar Toggle
         mobileSidebarToggle.addEventListener('click', () => {
             sidebarFilter.classList.toggle('hidden');
         });
 
-        // Filter Function
+        // Main Filter Function
         function filterEvents() {
             const query = searchInput.value.toLowerCase().trim();
             const startVal = startDateInput.value;
@@ -51665,11 +51878,16 @@
                 const matchesCity = selectedCity === 'all' || city === selectedCity;
                 const matchesTag = currentTag === 'all' || tags.includes(currentTag.toLowerCase());
 
+                let matchesRegion = true;
+                if (currentRegion !== 'all') {
+                    const validCities = REGION_MAP[currentRegion] || [];
+                    matchesRegion = validCities.some(vc => city.includes(vc));
+                }
+
                 const matchesParking = !wantParking || parking;
                 const matchesStroller = !wantStroller || stroller;
                 const matchesRainy = !wantRainy || rainy;
 
-                // 期間一致チェック（オーバーラップ判定）
                 let matchesDate = true;
                 if (cardStart !== '1970-01-01') {
                     if (startVal && cardEnd < startVal) {
@@ -51680,7 +51898,7 @@
                     }
                 }
 
-                if (matchesQuery && matchesType && matchesScene && matchesCity && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
+                if (matchesQuery && matchesType && matchesScene && matchesCity && matchesRegion && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
                     card.classList.remove('hidden');
                     count++;
                 } else {
@@ -51696,33 +51914,72 @@
             }
         }
 
-        // Preset Button Handlers
+        // Preset Button Click
         presetButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 setPreset(btn.dataset.preset);
             });
         });
 
-        // Event Listeners for Filters
-        searchInput.addEventListener('input', filterEvents);
-        startDateInput.addEventListener('change', () => {
-            activePresetBadge.textContent = 'カスタム期間';
-            presetButtons.forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white');
-                b.classList.add('bg-slate-100', 'text-slate-600');
+        // Type Button Click
+        typeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeButtons.forEach(b => {
+                    b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                btn.classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                currentType = btn.dataset.type;
+                filterEvents();
             });
-            filterEvents();
-        });
-        endDateInput.addEventListener('change', () => {
-            activePresetBadge.textContent = 'カスタム期間';
-            presetButtons.forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white');
-                b.classList.add('bg-slate-100', 'text-slate-600');
-            });
-            filterEvents();
         });
 
-        citySelect.addEventListener('change', filterEvents);
+        // Scene Button Click
+        sceneButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.classList.contains('bg-sky-600')) {
+                    btn.classList.remove('bg-sky-600', 'text-white');
+                    btn.classList.add('bg-slate-100', 'text-slate-600');
+                    currentScene = 'all';
+                } else {
+                    sceneButtons.forEach(b => {
+                        b.classList.remove('bg-sky-600', 'text-white');
+                        b.classList.add('bg-slate-100', 'text-slate-600');
+                    });
+                    btn.classList.remove('bg-slate-100', 'text-slate-600');
+                    btn.classList.add('bg-sky-600', 'text-white');
+                    currentScene = btn.dataset.scene;
+                }
+                filterEvents();
+            });
+        });
+
+        // Tag Button Click
+        tagButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tagButtons.forEach(b => {
+                    b.classList.remove('bg-sky-600', 'text-white');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                btn.classList.add('bg-sky-600', 'text-white');
+                currentTag = btn.dataset.tag;
+                filterEvents();
+            });
+        });
+
+        // Inputs Event Listeners
+        startDateInput.addEventListener('change', filterEvents);
+        endDateInput.addEventListener('change', filterEvents);
+        citySelect.addEventListener('change', () => {
+            currentRegion = 'all';
+            regionChipButtons.forEach(b => {
+                b.classList.remove('bg-sky-500', 'text-white', 'shadow-md');
+                b.classList.add('bg-white/10', 'text-white');
+            });
+            filterEvents();
+        });
         checkFreeParking.addEventListener('change', filterEvents);
         checkStroller.addEventListener('change', filterEvents);
         checkRainy.addEventListener('change', filterEvents);
@@ -51740,84 +51997,36 @@
             currentType = 'all';
             currentScene = 'all';
             currentTag = 'all';
+            currentRegion = 'all';
 
             typeButtons.forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+                b.classList.remove('bg-sky-600', 'text-white');
                 b.classList.add('bg-slate-100', 'text-slate-600');
             });
-            typeButtons[0].classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
+            typeButtons[0].classList.remove('bg-slate-100', 'text-slate-600');
+            typeButtons[0].classList.add('bg-sky-600', 'text-white');
 
             sceneButtons.forEach(b => {
                 b.classList.remove('bg-sky-600', 'text-white');
                 b.classList.add('bg-slate-100', 'text-slate-600');
             });
 
-            tagButtons.forEach(b => {
-                b.classList.remove('bg-sky-100', 'text-sky-700');
-                b.classList.add('bg-slate-100', 'text-slate-600');
+            regionChipButtons.forEach(b => {
+                b.classList.remove('bg-sky-500', 'text-white');
+                b.classList.add('bg-white/10', 'text-white');
             });
-            tagButtons[0].classList.add('bg-sky-100', 'text-sky-700');
+            regionChipButtons[0].classList.remove('bg-white/10', 'text-white');
+            regionChipButtons[0].classList.add('bg-sky-500', 'text-white');
 
-            setPreset('1week');
+            setPreset('all');
         });
 
-        // Type Buttons
-        typeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                typeButtons.forEach(b => {
-                    b.classList.remove('bg-sky-600', 'text-white', 'shadow-sky-500/20');
-                    b.classList.add('bg-slate-100', 'text-slate-600');
-                });
-                btn.classList.remove('bg-slate-100', 'text-slate-600');
-                btn.classList.add('bg-sky-600', 'text-white', 'shadow-sky-500/20');
-
-                currentType = btn.dataset.type;
-                filterEvents();
-            });
-        });
-
-        // Scene Buttons
-        sceneButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const isSelected = btn.classList.contains('bg-sky-600');
-                sceneButtons.forEach(b => {
-                    b.classList.remove('bg-sky-600', 'text-white');
-                    b.classList.add('bg-slate-100', 'text-slate-600');
-                });
-
-                if (!isSelected) {
-                    btn.classList.remove('bg-slate-100', 'text-slate-600');
-                    btn.classList.add('bg-sky-600', 'text-white');
-                    currentScene = btn.dataset.scene;
-                } else {
-                    currentScene = 'all';
-                }
-                filterEvents();
-            });
-        });
-
-        // Tag Buttons
-        tagButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                tagButtons.forEach(b => {
-                    b.classList.remove('bg-sky-100', 'text-sky-700');
-                    b.classList.add('bg-slate-100', 'text-slate-600');
-                });
-                btn.classList.remove('bg-slate-100', 'text-slate-600');
-                btn.classList.add('bg-sky-100', 'text-sky-700');
-
-                currentTag = btn.dataset.tag;
-                filterEvents();
-            });
-        });
-
-        // View Switcher (Grid vs Calendar)
+        // Toggle View Mode (Grid vs Calendar)
         viewGridBtn.addEventListener('click', () => {
             eventsGrid.classList.remove('hidden');
             calendarView.classList.add('hidden');
-
-            viewGridBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewGridBtn.classList.remove('text-slate-600');
+            viewGridBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewCalendarBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
             viewCalendarBtn.classList.add('text-slate-600');
         });
@@ -51825,59 +52034,56 @@
         viewCalendarBtn.addEventListener('click', () => {
             eventsGrid.classList.add('hidden');
             calendarView.classList.remove('hidden');
-
-            viewCalendarBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewCalendarBtn.classList.remove('text-slate-600');
+            viewCalendarBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewGridBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
             viewGridBtn.classList.add('text-slate-600');
 
             if (!calendarInstance) {
-                const calendarEl = document.getElementById('fullCalendarContainer');
-                calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    initialDate: startDateInput.value || '2026-09-27',
-                    locale: 'ja',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,listMonth'
-                    },
-                    buttonText: {
-                        today: '今日',
-                        month: '月表示',
-                        list: 'リスト'
-                    },
-                    events: calendarEventsData,
-                    eventClick: function(info) {
-                        const props = info.event.extendedProps;
-                        document.getElementById('modalTitle').innerHTML = (props.isEnded ? '<span class="text-slate-500 font-normal">[終了]</span> ' : '') + props.title;
-                        document.getElementById('modalContent').innerHTML = `
-                            ${props.isEnded ? '<div class="p-3 bg-amber-50 text-amber-800 rounded-xl text-xs font-bold">⚠️ このイベントは終了しました (アーカイブ情報)</div>' : ''}
-                            <div class="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100 text-xs sm:text-sm">
-                                <p><strong>📍 場所:</strong> ${props.location} (${props.address || ''})</p>
-                                <p><strong>🎟️ 料金:</strong> ${props.fee}</p>
-                                <p><strong>🚗 駐車場:</strong> ${props.parking}</p>
-                                <p><strong>🏢 主催:</strong> ${props.organizer}</p>
-                            </div>
-                            <div class="pt-1">
-                                <p class="font-bold mb-1">概要:</p>
-                                <p class="text-slate-600 leading-relaxed text-xs sm:text-sm">${props.summary}</p>
-                            </div>
-                        `;
-                        document.getElementById('modalActionBtn').innerHTML = `
-                            <a href="events/${props.itemId}.html" class="w-full inline-flex items-center justify-center py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm shadow">
-                                詳細ページを開く ↗
-                            </a>
-                        `;
-                        document.getElementById('detailModal').classList.remove('hidden');
-                    }
-                });
-                calendarInstance.render();
-            } else {
-                setTimeout(() => { calendarInstance.render(); }, 100);
+                initCalendar();
             }
         });
+
+        function initCalendar() {
+            const calendarEl = document.getElementById('fullCalendarContainer');
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ja',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                events: calendarEventsData,
+                eventClick: function(info) {
+                    openModal(info.event);
+                }
+            });
+            calendarInstance.render();
+        }
     });
+
+    function openModal(fcEvent) {
+        const modal = document.getElementById('detailModal');
+        const titleEl = document.getElementById('modalTitle');
+        const contentEl = document.getElementById('modalContent');
+        const actionBtnEl = document.getElementById('modalActionBtn');
+
+        titleEl.textContent = fcEvent.title;
+        contentEl.innerHTML = `
+            <div class="space-y-2 text-xs text-slate-600">
+                <p><strong>📅 開催日時:</strong> ${fcEvent.extendedProps.date_str || '詳細をご確認ください'}</p>
+                <p><strong>📍 会場・地域:</strong> ${fcEvent.extendedProps.location || ''} (${fcEvent.extendedProps.city || ''})</p>
+                <p class="line-clamp-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${fcEvent.extendedProps.summary || ''}</p>
+            </div>
+        `;
+        actionBtnEl.innerHTML = `
+            <a href="events/${fcEvent.id}.html" class="block w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-center text-xs rounded-xl shadow-md transition-all">
+                イベント詳細ページを見る ➔
+            </a>
+        `;
+        modal.classList.remove('hidden');
+    }
 
     function closeModal() {
         document.getElementById('detailModal').classList.add('hidden');

@@ -212,11 +212,19 @@ def generate_site():
     all_tags = sorted(list(all_tags_set))
     cities = sorted(list(cities_set))
 
+    # 注目ピックアップイベントの抽出 (主要イベントまたはおすすめ4件)
+    featured_keywords = ["大道芸", "熱海海上花火", "修善寺温泉", "焼津", "三嶋大社", "日本平", "三保松原", "さわやか"]
+    featured_events = [e for e in events if any(k in e["title"] for k in featured_keywords) and not e.get("is_ended")]
+    if len(featured_events) < 4:
+        featured_events = [e for e in events if not e.get("is_ended")][:4]
+    featured_events = featured_events[:4]
+
     current_year = datetime.datetime.now().year
 
     # Render index.html
     index_html = index_template.render(
         events=events,
+        featured_events=featured_events,
         calendar_events_json=calendar_events_json,
         all_tags=all_tags,
         cities=cities,
