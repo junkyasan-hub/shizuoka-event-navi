@@ -129,7 +129,7 @@ Google検索ツールを使用して、以下のイベント情報が【静岡�
             "description": raw_description
         }
 
-def discover_regional_events(region_name, cities):
+def discover_regional_events(region_name, cities, exclude_titles=None):
     """
     Gemini 3.5 Flash-lite + Google Search Grounding を使用して、
     指定地域の2026年最新公的・観光イベント情報を自動探索・抽出します。
@@ -142,9 +142,14 @@ def discover_regional_events(region_name, cities):
     try:
         client = genai.Client(api_key=api_key)
         cities_str = "、".join(cities)
+        exclude_str = "、".join(list(exclude_titles)[:25]) if exclude_titles else "なし"
+
         prompt = f"""
 あなたは「静岡県お出かけ・イベントナビ」のプロのイベント編集者です。
-Google検索ツールを使用して、静岡県の【{region_name}（対象自治体: {cities_str}）】で2026年に開催される最新の観光イベント・フェスティバル・祭り・公的行事の情報を3〜5件検索し、正確な開催情報を抽出してください。
+Google検索ツールを使用して、静岡県の【{region_name}（対象自治体: {cities_str}）】で2026年に開催される最新の観光イベント・フェスティバル・マルシェ・展示・祭り・公的行事の情報を3〜5件検索し、正確な開催情報を抽出してください。
+
+【除外対象（以下は登録済みの為、これら以外の新イベントを探してください）】
+{exclude_str}
 
 【検索対象の条件】
 - 地域: {cities_str}

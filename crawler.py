@@ -262,7 +262,7 @@ def run_crawler():
         r_name = reg["region_name"]
         cities = reg["cities"]
         logger.info(f"地域イベント探索中: [{r_name}] {cities}")
-        discovered = ai_rewriter.discover_regional_events(r_name, cities)
+        discovered = ai_rewriter.discover_regional_events(r_name, cities, exclude_titles=existing_titles)
         time.sleep(2)  # Rate limiting for Gemini API Free Tier
 
         for d_item in discovered:
