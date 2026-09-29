@@ -55,11 +55,13 @@ jobs:
           git add events.db dist/
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Daily updated events database and static site" && git push)
 
-      - name: Deploy to StarServer via Python FTP Script
+      - name: Deploy to StarServer via HTTPS Web Deploy (with FTP fallback)
         env:
+          WEB_DEPLOY_URL: https://event.very-good.biz/deploy.php
+          WEB_DEPLOY_SECRET: ShizuokaEventNavi2026SecretKey
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_REMOTE_DIR: /very-good.biz/public_html/event.very-good.biz
         run: |
-          python deploy_ftp.py
+          python deploy_web.py || python deploy_ftp.py
