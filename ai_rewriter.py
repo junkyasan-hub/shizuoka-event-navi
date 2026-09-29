@@ -142,17 +142,20 @@ def discover_regional_events(region_name, cities, exclude_titles=None):
     try:
         client = genai.Client(api_key=api_key)
         cities_str = "、".join(cities)
-        exclude_str = "、".join(list(exclude_titles)[:25]) if exclude_titles else "なし"
+        # 登録済みの最新50件および主要タイトルを除外対象として提示
+        recent_titles = list(exclude_titles)[-50:] if exclude_titles else []
+        exclude_str = "、".join(recent_titles) if recent_titles else "なし"
 
         prompt = f"""
 あなたは「静岡県お出かけ・イベントナビ」のプロのイベント編集者です。
-Google検索ツールを使用して、静岡県の【{region_name}（対象自治体: {cities_str}）】で2026年に開催される最新の観光イベント・フェスティバル・マルシェ・展示・祭り・公的行事の情報を3〜5件検索し、正確な開催情報を抽出してください。
+Google検索ツールを使用して、静岡県の【{region_name}（対象自治体: {cities_str}）】で2026年9月〜12月に開催される最新の観光イベント、季節の祭り、マルシェ、クラフト市、秋の体験・ライトアップ、地域行事の情報を3〜5件検索し、正確な開催情報を抽出してください。
 
-【除外対象（以下は登録済みの為、これら以外の新イベントを探してください）】
+【重要：除外条件】
+以下のイベントは既に登録済みのため、これら以外の【まだ登録されていない新しい地域イベント】を具体的に検索して抽出してください：
 {exclude_str}
 
 【検索対象の条件】
-- 地域: {cities_str}
+- 地域: {cities_str} のいずれかの市町
 - 開催時期: 2026年9月〜12月（現在開催中または今後開催予定のもの）
 - 情報源: 市役所公式、観光協会、公的ニュース等の信頼できる発表情報
 
