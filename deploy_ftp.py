@@ -1,37 +1,51 @@
 import os
 import sys
+import socket
+import traceback
 import ftplib
+
+# Set global socket timeout to 15 seconds so NO socket (control or passive data socket) ever hangs!
+socket.setdefaulttimeout(15)
+
+def log(msg):
+    print(msg, flush=True)
 
 def get_env_var(name):
     return os.environ.get(name, "").strip()
 
 def connect_ftp(host, user, passwd):
-    print(f"--- Attempting connection to host: '{host}' ---")
+    log(f"\n--- Testing host: '{host}' ---")
+    try:
+        ip = socket.gethostbyname(host)
+        log(f"Resolved {host} -> {ip}")
+    except Exception as e:
+        log(f"DNS resolution failed for {host}: {e}")
+        return None
     
     # 1. Try FTPS (Explicit TLS over port 21)
-    print(f"1. Trying FTPS (Explicit TLS) on {host}:21...")
+    log(f"1. Attempting FTPS (Explicit TLS) to {host}:21 (timeout=15s)...")
     try:
         ftps = ftplib.FTP_TLS()
-        ftps.connect(host, 21, timeout=20)
+        ftps.connect(host, 21, timeout=15)
         ftps.login(user, passwd)
         ftps.prot_p()  # Encrypt data channel
         ftps.set_pasv(True)
-        print(f"SUCCESS: Connected to {host} via FTPS!")
+        log(f"SUCCESS: Connected to {host} via FTPS!")
         return ftps
     except Exception as e:
-        print(f"FTPS connection to {host} failed: {e}")
+        log(f"FTPS failed for {host}: {e}")
 
     # 2. Try Standard FTP (Plain text over port 21)
-    print(f"2. Trying Plain FTP on {host}:21...")
+    log(f"2. Attempting Plain FTP to {host}:21 (timeout=15s)...")
     try:
         ftp = ftplib.FTP()
-        ftp.connect(host, 21, timeout=20)
+        ftp.connect(host, 21, timeout=15)
         ftp.login(user, passwd)
         ftp.set_pasv(True)
-        print(f"SUCCESS: Connected to {host} via Plain FTP!")
+        log(f"SUCCESS: Connected to {host} via Plain FTP!")
         return ftp
     except Exception as e:
-        print(f"Plain FTP connection to {host} failed: {e}")
+        log(f"Plain FTP failed for {host}: {e}")
         return None
 
 def ensure_remote_dir(ftp, remote_dir):
@@ -43,16 +57,17 @@ def ensure_remote_dir(ftp, remote_dir):
             ftp.cwd(current)
         except ftplib.error_perm:
             try:
-                print(f"Creating remote directory: {current}")
+                log(f"Creating directory: {current}")
                 ftp.mkd(current)
                 ftp.cwd(current)
             except Exception as e:
-                print(f"Warning: Could not create/cd directory {current}: {e}")
+                log(f"Warning: Could not create/cd {current}: {e}")
 
 def upload_dir(ftp, local_dir, remote_dir):
     ensure_remote_dir(ftp, remote_dir)
     target_base = "/" + remote_dir.strip("/")
 
+    file_count = 0
     for root, dirs, files in os.walk(local_dir):
         rel_path = os.path.relpath(root, local_dir)
         if rel_path == ".":
@@ -64,9 +79,11 @@ def upload_dir(ftp, local_dir, remote_dir):
 
         for f in files:
             local_file_path = os.path.join(root, f)
-            print(f"Uploading: {rel_path}/{f} -> {current_remote}/{f}")
+            log(f"Uploading [{file_count+1}]: {rel_path}/{f} -> {current_remote}/{f}")
             with open(local_file_path, "rb") as fp:
                 ftp.storbinary(f"STOR {f}", fp)
+            file_count += 1
+    log(f"Uploaded total {file_count} files.")
 
 def main():
     raw_server = get_env_var("FTP_SERVER").replace("https://", "").replace("http://", "").replace("ftp://", "").strip("/")
@@ -75,12 +92,19 @@ def main():
     remote_dir = get_env_var("FTP_REMOTE_DIR") or "/very-good.biz/public_html/event.very-good.biz"
     local_dir = "./dist"
 
+    log(f"Starting FTP deployment to remote_dir: {remote_dir}")
+    log(f"Configured FTP_SERVER secret: '{raw_server}'")
+    log(f"Configured FTP_USERNAME secret: '{user}'")
+
     if not raw_server or not user or not passwd:
-        print("Error: Missing FTP_SERVER, FTP_USERNAME, or FTP_PASSWORD environment variables.")
+        log("[ERROR] Missing required secrets: FTP_SERVER, FTP_USERNAME, or FTP_PASSWORD.")
         sys.exit(1)
 
-    hosts_to_try = [raw_server]
-    # Fallback host for StarServer
+    hosts_to_try = []
+    if raw_server:
+        hosts_to_try.append(raw_server)
+    
+    # Common StarServer FTP host patterns
     star_server_host = "ss462060.stars.ne.jp"
     if star_server_host not in hosts_to_try:
         hosts_to_try.append(star_server_host)
@@ -92,19 +116,17 @@ def main():
             break
 
     if not ftp:
-        print("\n[ERROR] Could not connect to FTP server using any host or protocol.")
-        print("Possible causes:")
-        print("1. StarServer FTP_SERVER secret value is incorrect.")
-        print("2. StarServer is blocking connections from GitHub Actions IP range (Overseas IP block).")
+        log("\n[ERROR] All FTP/FTPS connection attempts timed out or failed.")
         sys.exit(1)
 
     try:
-        print(f"\nStarting file upload from '{local_dir}' to '{remote_dir}'...")
+        log(f"\nStarting file upload from '{local_dir}'...")
         upload_dir(ftp, local_dir, remote_dir)
         ftp.quit()
-        print("\n[SUCCESS] FTP deployment finished successfully!")
+        log("\n[SUCCESS] Deployment completed successfully!")
     except Exception as e:
-        print(f"\n[ERROR] Deployment failed during upload: {e}")
+        log(f"\n[ERROR] Failed during upload: {e}")
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
