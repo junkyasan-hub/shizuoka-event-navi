@@ -63,7 +63,7 @@ def main():
     req = urllib.request.Request(deploy_url, data=payload, headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=120) as response:
             res_body = response.read().decode("utf-8")
             status = response.status
             print(f"Server Response ({status}):\n{res_body}")

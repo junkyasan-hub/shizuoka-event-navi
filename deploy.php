@@ -7,6 +7,9 @@
 // Set your secret key here (must match WEB_DEPLOY_SECRET in GitHub Secrets)
 $SECRET_KEY = 'ShizuokaEventNavi2026SecretKey';
 
+@set_time_limit(120);
+@ini_set('memory_limit', '256M');
+
 header('Content-Type: text/plain; charset=utf-8');
 
 // 1. Verify Secret Token
