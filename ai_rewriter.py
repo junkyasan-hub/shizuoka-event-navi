@@ -74,7 +74,7 @@ Google検索ツールを使用して、以下のイベント情報が【静岡�
 必ず純粋なJSONオブジェクトのみを出力してください。テキスト注釈やマークダウンブロックは含めないでください。
 """
 
-        model_candidates = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
+        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
         response = None
         for model_name in model_candidates:
             try:
@@ -184,7 +184,7 @@ Google検索ツールを使用して、静岡県の【{region_name}（対象自�
 ]
 """
 
-        model_candidates = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
+        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
         response = None
         for model_name in model_candidates:
             try:
