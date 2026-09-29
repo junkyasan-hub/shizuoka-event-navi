@@ -55,14 +55,11 @@ jobs:
           git add events.db dist/
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Daily updated events database and static site" && git push)
 
-      - name: Deploy to StarServer via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          protocol: ftps
-          security: loose
-          local-dir: ./dist/
-          server-dir: /very-good.biz/public_html/event.very-good.biz/   # スターサーバーの公開ディレクトリ
+      - name: Deploy to StarServer via Python FTP Script
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: /very-good.biz/public_html/event.very-good.biz
+        run: |
+          python deploy_ftp.py
