@@ -1,10 +1,9 @@
 name: Automatic Event Data Collection, AI Rewrite & Deploy to StarServer
 
 on:
-  # 自動収集を一時停止中（再開する場合はコメントを解除してください）
+  # 毎日 午前3時(JST) = 前日18:00 (UTC)
   schedule:
-  #   # 毎日 午前3時(JST) = 18:00 (UTC) に自動実行
-  - cron: '0 18 * * *'
+    - cron: '0 18 * * *'
   # push:
   #   branches:
   #     - main
@@ -12,7 +11,7 @@ on:
   #     - 'dist/**'
   #     - 'events.db'
   #     - '*.md'
-  workflow_dispatch: # 手動実行ボタンのみ保持
+  workflow_dispatch:
 
 concurrency:
   group: auto-update
@@ -24,6 +23,7 @@ permissions:
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Repository
@@ -46,13 +46,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python crawler.py
-
-      - name: Audit & Cleanup Event Data (AI Fact Check)
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python audit_and_cleanup_events.py
+          python collect_events.py --max-events 20
 
       - name: Regenerate Static HTML Site
         run: |
@@ -70,7 +64,6 @@ jobs:
           python deploy_web.py || python deploy_ftp.py
 
       - name: Commit & Push Updated DB and Site back to GitHub Repository
-        if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
