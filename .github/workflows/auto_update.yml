@@ -2,9 +2,9 @@ name: Automatic Event Data Collection, AI Rewrite & Deploy to StarServer
 
 on:
   # 自動収集を一時停止中（再開する場合はコメントを解除してください）
-  # schedule:
+  schedule:
   #   # 毎日 午前3時(JST) = 18:00 (UTC) に自動実行
-  #   - cron: '0 18 * * *'
+  - cron: '0 18 * * *'
   # push:
   #   branches:
   #     - main
