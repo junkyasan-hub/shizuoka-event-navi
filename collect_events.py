@@ -128,6 +128,8 @@ def main(argv=None):
     parser.add_argument('--db', default='events.db')
     parser.add_argument('--dry-run', action='store_true', help='fetch only; no Gemini or database writes')
     parser.add_argument('--no-rewrite', action='store_true', help='explicit factual-text mode; no Gemini calls')
+    parser.add_argument('--allow-partial', action='store_true',
+                        help='continue with successful sources, reporting failed sources as warnings')
     parser.add_argument('--max-events', type=int, default=20)
     parser.add_argument('--max-details', type=int, default=30, help='detail requests per HTML source, first listing page')
     parser.add_argument('--output', help='optional JSON report path (outside tracked dist recommended)')
@@ -161,10 +163,20 @@ def main(argv=None):
         pending = pending_events(conn, events)
     selected = select_fairly(pending, args.max_events)
     report = {'sources': reports, 'eligible': len(events), 'pending': len(pending),
-              'selected': [e for e, _ in selected], 'dry_run': args.dry_run, 'saved': 0}
-    if failures:
+              'selected': [e for e, _ in selected], 'dry_run': args.dry_run, 'saved': 0,
+              'failed_sources': failures.copy(), 'status': 'success'}
+    successful_sources = sum('error' not in result for result in reports)
+    blocked = bool(failures) and (not args.allow_partial or not successful_sources)
+    if blocked:
         LOG.error('Incomplete collection; refusing publication/database writes: %s', ', '.join(failures))
-    elif not args.dry_run and selected:
+        report['status'] = 'failed'
+    elif failures:
+        report['status'] = 'partial'
+        message = '一部の収集先で取得失敗。取得できた地域のみ処理します: ' + ', '.join(failures)
+        LOG.warning(message)
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            print('::warning title=イベント取得は一部のみ成功::' + message, flush=True)
+    if not blocked and not args.dry_run and selected:
         try:
             if args.no_rewrite:
                 rewrites = [{'summary': f'{e["city"]}の「{e["title"]}」。開催日: {e["date_str"]}。',
@@ -176,12 +188,26 @@ def main(argv=None):
             report['saved'] = len(selected)
         except Exception as exc:
             LOG.error('Import failed: %s', exc)
-            failures.append('rewrite/save')
+            blocked = True
+            report['status'] = 'failed'
+            report['error'] = str(exc)
     if args.output:
         Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     LOG.info('Collection summary: eligible=%d pending=%d selected=%d saved=%d dry_run=%s',
              len(events), len(pending), len(selected), report['saved'], args.dry_run)
-    return 1 if failures else 0
+    summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary_path:
+        lines = ['## イベント収集結果', '', f'結果: **{report["status"]}**', '',
+                 '| 収集先 | 解析件数 | 掲載候補 | 結果 |', '| --- | ---: | ---: | --- |']
+        for result in reports:
+            lines.append(f'| {result["source"]} | {result.get("parsed", "—")} | '
+                         f'{result.get("eligible", "—")} | {"取得失敗" if "error" in result else "取得成功"} |')
+        lines += ['', f'保存件数: {report["saved"]} / 処理対象: {len(selected)}',
+                  'dry-runのため保存していません。' if args.dry_run else '',
+                  '失敗した収集先の既存データは削除していません。' if failures else '', '']
+        with open(summary_path, 'a', encoding='utf-8') as summary:
+            summary.write('\n'.join(lines))
+    return 1 if blocked else 0
 
 
 if __name__ == '__main__':
