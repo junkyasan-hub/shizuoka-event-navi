@@ -190,24 +190,13 @@ def enrich_item(item):
 def extract_calendar_events(items):
     calendar_events = []
     for item in items:
-        start_iso = None
-        end_iso = None
-        date_str = item["date_str"]
-
-        if "2026年9月12日" in date_str:
-            start_iso = "2026-09-12"
-            if "9月13日" in date_str:
-                end_iso = "2026-09-14"
-        elif "2026年9月13日" in date_str:
-            start_iso = "2026-09-13"
-        elif "2026年4月3日" in date_str:
-            start_iso = "2026-04-03"
-            end_iso = "2026-04-06"
-        elif "2026年4月19日" in date_str:
-            start_iso = "2026-04-19"
-        elif "2026年5月3日" in date_str:
-            start_iso = "2026-05-03"
-            end_iso = "2026-05-06"
+        start_iso = item.get('start_iso')
+        end_iso = item.get('end_iso')
+        if not start_iso or start_iso == '1970-01-01':
+            continue
+        # FullCalendar treats end dates as exclusive, including all-day events.
+        end_iso = (datetime.date.fromisoformat(end_iso or start_iso)
+                   + datetime.timedelta(days=1)).isoformat()
 
         if start_iso:
             color = "#0284c7"
@@ -236,14 +225,17 @@ def extract_calendar_events(items):
                     "lat": item.get("lat", 34.9769),
                     "lng": item.get("lng", 138.3831),
                     "isEnded": item.get("is_ended", False),
-                    "officialUrl": item.get("official_url", "")
+                    "officialUrl": item.get("official_url", ""),
+                    "date_str": item["date_str"],
+                    "city": item["city"]
                 }
             }
             if end_iso:
                 cal_evt["end"] = end_iso
             calendar_events.append(cal_evt)
 
-    return json.dumps(calendar_events, ensure_ascii=False)
+    return (json.dumps(calendar_events, ensure_ascii=False)
+            .replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026'))
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
