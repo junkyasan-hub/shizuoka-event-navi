@@ -21,7 +21,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           cp events.db "$RUNNER_TEMP/events.db"
-          python collect_events.py --db "$RUNNER_TEMP/events.db" --max-events 5 --max-details 10 --output "$RUNNER_TEMP/collection-report.json"
+          python collect_events.py --db "$RUNNER_TEMP/events.db" --max-events 5 --max-details 10 --allow-partial --output "$RUNNER_TEMP/collection-report.json"
       - name: Save collection report
         if: always()
         uses: actions/upload-artifact@v4
