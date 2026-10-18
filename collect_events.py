@@ -41,15 +41,28 @@ def pending_events(conn, events):
     existing = {(clean(title), city, date_bounds(date)): event_id for event_id, title, city, date
                 in conn.execute("SELECT id, title, city, date_str FROM events WHERE item_type='event'")}
     live_ids = {r[0] for r in conn.execute('SELECT id FROM events')}
+    from manual_events import controls
+    protected = controls(conn)
+    protected_identities = set()
+    if 'event_manual_history' in tables:
+        for before, after in conn.execute('SELECT before_json, after_json FROM event_manual_history'):
+            for raw in (before, after):
+                row = json.loads(raw)
+                if row:
+                    protected_identities.add((clean(row['title']), row['city'], date_bounds(row['date_str'])))
     result = []
     seen = set()
     for event in events:
         key = source_key(event)
         identity = (clean(event['title']), event['city'], date_bounds(event['date_str']))
+        if identity in protected_identities:
+            continue
         if key in seen:
             continue
         seen.add(key)
         previous = imports.get(key)
+        if previous and previous[1] in protected:
+            continue
         if previous and previous[1] in live_ids:
             if previous[0] != digest(event):
                 result.append((event, previous[1]))
@@ -88,7 +101,11 @@ def save_events(conn, selected, rewrites):
             facts_hash TEXT NOT NULL, source_name TEXT NOT NULL, fetched_at TEXT NOT NULL)''')
         conn.execute('''CREATE TABLE IF NOT EXISTS event_body_checks (
             event_id INTEGER PRIMARY KEY, checked_at TEXT NOT NULL, verification_json TEXT NOT NULL)''')
+        from manual_events import controls
+        protected = controls(conn)
         for (event, event_id), rewrite in zip(selected, rewrites):
+            if event_id in protected:
+                raise ValueError("手動編集したイベントは自動更新できません")
             lat, lng = COORDS[event['city']]
             has_coordinates = 'lat' in event and 'lng' in event
             if has_coordinates:

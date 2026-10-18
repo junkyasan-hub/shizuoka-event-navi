@@ -247,6 +247,9 @@ def fetch_events():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events")
     rows = cursor.fetchall()
+    from manual_events import controls
+    hidden = controls(conn)
+    rows = [r for r in rows if not hidden.get(r["id"], 0)]
     conn.close()
 
     items = [enrich_item(row) for row in rows]
@@ -312,6 +315,13 @@ def generate_site():
             f.write(detail_html)
         print(f"[OK] Generated: {detail_path}")
 
+    from manual_events import build_editor, controls
+    with get_db_connection() as conn:
+        build_editor(conn, os.path.join(OUTPUT_DIR, "manual-editor.html"))
+        for event_id, hidden in controls(conn).items():
+            if hidden:
+                with open(os.path.join(EVENTS_OUTPUT_DIR, f"{event_id}.html"), "w", encoding="utf-8") as page:
+                    page.write('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="robots" content="noindex"><title>非掲載</title><p>このイベントは現在掲載していません。</p><a href="../index.html">トップへ</a></html>')
     print("[SUCCESS] Static site generation completed successfully!")
 
 if __name__ == "__main__":
