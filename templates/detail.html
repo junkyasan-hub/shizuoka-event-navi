@@ -137,9 +137,11 @@
                 <dl class="space-y-4 text-sm">
                     <!-- Status -->
                     <div>
-                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">開催ステータス</dt>
+                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{% if event.item_type == 'gourmet' %}掲載区分{% else %}開催ステータス{% endif %}</dt>
                         <dd class="text-slate-900 font-semibold">
-                            {% if event.is_ended %}
+                            {% if event.item_type == 'gourmet' %}
+                            <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-bold border border-amber-200">常設飲食店（営業状況は店舗へご確認ください）</span>
+                            {% elif event.is_ended %}
                             <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold border border-slate-300">
                                 終了済み
                             </span>
