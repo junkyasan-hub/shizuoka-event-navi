@@ -167,7 +167,7 @@ class VerificationTests(unittest.TestCase):
                 result = recheck_published(conn, [actual], {SOURCES[1].name}, Mock(), 0)
             self.assertEqual(result[0]['status'], 'cancelled')
 
-    def test_main_holds_date_changes_instead_of_overwriting_or_duplicating(self):
+    def test_main_corrects_same_year_date_without_duplicating(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'events.db';shutil.copy2('events.db', db)
             original = self.event()
@@ -184,10 +184,14 @@ class VerificationTests(unittest.TestCase):
                                            '--allow-partial', '--output', str(report_path)])
             self.assertEqual(code, 0)
             report = json.loads(report_path.read_text())
-            self.assertEqual(report['saved'], 0)
-            self.assertEqual(len(report['held_updates']), 1)
+            self.assertEqual(report['saved'], 1)
+            self.assertEqual(len(report['held_updates']), 0)
+            self.assertEqual(len(report['auto_corrections']), 1)
             with sqlite3.connect(db) as conn:
-                self.assertEqual(conn.execute('SELECT * FROM events ORDER BY id').fetchall(), before)
+                after = conn.execute('SELECT * FROM events ORDER BY id').fetchall()
+                self.assertEqual(len(after),len(before))
+                self.assertEqual(after[-1][3],actual['date_str'])
+                self.assertEqual(conn.execute('SELECT COUNT(*) FROM event_auto_correction_history').fetchone()[0],1)
 
     def test_main_does_not_save_bad_generated_body(self):
         with tempfile.TemporaryDirectory() as tmp:
