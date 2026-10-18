@@ -1,0 +1,35 @@
+[
+  {
+    "title": "炭火割烹とも",
+    "city": "伊東市",
+    "address": "静岡県伊東市八幡野300-2",
+    "hours": "昼11:30〜13:30（L.O.12:30）、夜18:00〜22:00（L.O.21:00）",
+    "closed": "昼は毎週月・火・水曜日、夜は毎週月・火曜日",
+    "tags": "グルメ,和食,常設飲食店",
+    "parking": "あり（第1駐車場3台、第2駐車場3台。料金は情報元をご確認ください）",
+    "source_url": "https://itospa.com/gourmet/detail_32006.html",
+    "checked_on": "2026-10-18"
+  },
+  {
+    "title": "伊豆の食材で創るパスタ Jupiter",
+    "city": "伊東市",
+    "address": "静岡県伊東市八幡野1039-101",
+    "hours": "11:00〜14:30（L.O.）",
+    "closed": "毎週水曜日",
+    "tags": "グルメ,パスタ,常設飲食店",
+    "parking": "あり（7台。料金は情報元をご確認ください）",
+    "source_url": "https://itospa.com/gourmet/detail_54420.html",
+    "checked_on": "2026-10-18"
+  },
+  {
+    "title": "町中華 金華",
+    "city": "伊東市",
+    "address": "静岡県伊東市宇佐美1899-13",
+    "hours": "昼11:00〜14:15（L.O.）、夜17:00〜20:45（L.O.）",
+    "closed": "毎週水曜日、不定休あり",
+    "tags": "グルメ,中華,常設飲食店",
+    "parking": "あり（7台。料金は情報元をご確認ください）",
+    "source_url": "https://itospa.com/gourmet/detail_54682.html",
+    "checked_on": "2026-10-18"
+  }
+]
