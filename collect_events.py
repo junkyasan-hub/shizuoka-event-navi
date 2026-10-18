@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 import ai_rewriter
 from event_sources import SOURCES, Fetcher, clean, collect, date_bounds
 from event_verification import (require_supported_bodies, recheck_published,
-                                save_rechecks, BodyVerificationError, STATUS_LABELS, check_body)
+                                save_rechecks, BodyVerificationError, STATUS_LABELS, check_body, factual_payload)
 
 LOG = logging.getLogger(__name__)
 COORDS = {'浜松市': (34.7108, 137.7261), '静岡市': (34.9756, 138.3828),
@@ -234,16 +234,49 @@ def main(argv=None):
                 rewrites = [{'summary': f'{e["city"]}の「{e["title"]}」。開催日: {e["date_str"]}。',
                              'description': '開催内容の詳細や変更情報は出典をご確認ください。'} for e, _ in selected]
             else:
-                rewrites = ai_rewriter.rewrite_collected_events([e for e, _ in selected])
+                rewrites = ai_rewriter.rewrite_collected_events([e for e, _ in selected], allow_partial=True)
             report['body_verification'] = 'deterministic_only' if args.no_rewrite else 'deterministic_and_gemini'
-            with sqlite3.connect(db_path) as conn:
-                save_events(conn, selected, rewrites)
-            report['saved'] = len(selected)
+            if len(rewrites) != len(selected):
+                raise ValueError('rewrite count does not match selected events')
+            approved, approved_bodies, body_results = [], [], []
+            for index, ((event, event_id), rewrite) in enumerate(zip(selected, rewrites)):
+                deterministic = check_body(event, rewrite)
+                verification = rewrite.get('_body_verification', {})
+                issues = list(dict.fromkeys(deterministic['issues'] + verification.get('issues', [])))
+                detail = {'index': index, 'title': event['title'], 'event_id': event_id,
+                          'source_url': event['source_url'], 'source_facts': factual_payload(event),
+                          'body': {'summary': rewrite['summary'], 'description': rewrite['description']},
+                          'issues': issues, 'status': 'needs_review' if issues else 'passed',
+                          'deterministic_review': deterministic,
+                          'gemini_review': verification.get('review')}
+                body_results.append(detail)
+                if not issues:
+                    approved.append((event, event_id))
+                    approved_bodies.append(rewrite)
+            report['body_results'] = body_results
+            report['body_issues'] = [item for item in body_results if item['issues']]
+            report['body_passed'] = len(approved)
+            report['body_held'] = len(report['body_issues'])
+            if report['body_held']:
+                report['body_verification'] = 'needs_review'
+                report['status'] = 'partial' if approved else 'failed'
+                LOG.warning('本文確認: %d件を保存対象、%d件を保留。詳細はbody_resultsを確認してください',
+                            len(approved), report['body_held'])
+                if os.environ.get('GITHUB_ACTIONS') == 'true':
+                    print(f'::warning title=本文の確認で一部保留::{report["body_held"]}件を保留しました。根拠と生成文はcollection-report.jsonを確認してください。', flush=True)
+            if not approved:
+                blocked = True
+            else:
+                with sqlite3.connect(db_path) as conn:
+                    save_events(conn, approved, approved_bodies)
+                report['saved'] = len(approved)
         except Exception as exc:
             LOG.error('Import failed: %s', exc)
             blocked = True
             report['status'] = 'failed'
             report['error'] = str(exc)
+            if hasattr(exc, 'verification_diagnostics'):
+                report['verification_diagnostics'] = exc.verification_diagnostics
             if report['body_verification'] == 'checking':
                 report['body_verification'] = 'failed'
             if isinstance(exc, BodyVerificationError):
@@ -273,6 +306,7 @@ def main(argv=None):
                   'dry-runのため保存していません。' if args.dry_run else '',
                   '失敗した収集先の既存データは削除していません。' if failures else '', '']
         lines += ['### 本文の事実確認', '', f'結果: {report["body_verification"]}', '',
+                  f'確認通過: {report.get("body_passed", 0)}件 / 本文保留: {report.get("body_held", 0)}件', '',
                   '### 掲載済みイベントの再確認', '',
                   '日時・会場・料金等の照合であり、本文の全記述を保証する判定ではありません。', '',
                   '| 判定 | 件数 |', '| --- | ---: |']
@@ -283,7 +317,12 @@ def main(argv=None):
             title = item['title'].replace('|', '／').replace('\n', ' ')
             issues = ' / '.join(item['issues']).replace('|', '／').replace('\n', ' ')
             lines.append(f'| {item["event_id"]} | {title} | {issues} |')
-        lines += ['', '全件の根拠・変更内容はcollection-report.jsonを参照してください。', '']
+        lines += ['', '### 本文の保留理由', '', '| イベント | 理由 |', '| --- | --- |']
+        for item in report.get('body_issues', []):
+            title = item['title'].replace('|', '／').replace('\n', ' ')
+            issues = ' / '.join(item['issues']).replace('|', '／').replace('\n', ' ')
+            lines.append(f'| {title} | {issues} |')
+        lines += ['', '全件の生成文・出典情報・Geminiの引用はcollection-report.jsonのbody_resultsを参照してください。', '']
         with open(summary_path, 'a', encoding='utf-8') as summary:
             summary.write('\n'.join(lines))
     return 1 if blocked else 0

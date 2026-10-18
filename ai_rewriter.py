@@ -11,12 +11,12 @@ import json
 import logging
 from google import genai
 from google.genai import types
-from event_verification import factual_payload, require_supported_bodies, BodyVerificationError
+from event_verification import factual_payload, require_supported_bodies, BodyVerificationError, check_body
 
 logger = logging.getLogger("ai_rewriter")
 
 
-def rewrite_collected_events(events):
+def rewrite_collected_events(events, *, allow_partial=False):
     """Rewrite supplied facts with plain generation; no Google Search tool."""
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if not api_key:
@@ -62,20 +62,20 @@ def rewrite_collected_events(events):
             if not isinstance(description, str) or not description.strip() or len(description) > 250:
                 raise ValueError('invalid description')
             result.append({'summary': summary.strip(), 'description': description.strip()})
-        require_supported_bodies(events, result)
-        reviews = verify_rewritten_events(events, result)
+        reviews = verify_rewritten_events(events, result, allow_partial=allow_partial)
         for rewrite, review in zip(result, reviews):
             rewrite['_body_verification'] = {
                 'method': 'deterministic_and_gemini',
                 'model': os.environ.get('GEMINI_REWRITE_MODEL', 'gemini-3.5-flash-lite'),
                 'review': review,
+                'issues': review.get('_issues', []),
             }
         return result
     except (ValueError, KeyError, TypeError, AttributeError):
         raise RuntimeError('Gemini returned incomplete or invalid rewrite JSON; database not changed') from None
 
 
-def verify_rewritten_events(events, rewrites):
+def verify_rewritten_events(events, rewrites, *, allow_partial=False):
     """Independent plain-generation review grounded in exact source quotations."""
     payload = [{'id': str(index), 'facts': factual_payload(event), 'body': rewrite}
                for index, (event, rewrite) in enumerate(zip(events, rewrites))]
@@ -85,8 +85,10 @@ def verify_rewritten_events(events, rewrites):
         '対象年齢、見どころ等について、根拠のない断定や矛盾を見つけてください。'
         '事実を確認できない場合もsupportedにしないでください。単なる案内文は断定と区別してください。'
         '各idにverdict（supported/unsupported/uncertain）、issues（問題の文字列配列）、'
-        'evidence（fieldとquoteの配列）を返してください。supportedには、factsの該当フィールドから'
+        'evidence（fieldとquoteの配列）を返してください。issuesには問題のある本文の文を引用し、理由を書いてください。supportedには、factsの該当フィールドから'
         '文字列をそのまま抜き出した根拠を少なくとも1つ付け、issuesは空配列にしてください。'
+        'fieldにはtitle、date_str、locationなどfacts直下のキー名だけを書き、facts.titleのような接頭辞は付けないでください。'
+        'quoteは省略記号や言い換えを使わず、空白や記号も元の文字列のまま引用してください。'
         '返答は {"items":[{"id":"0","verdict":"supported","issues":[],"evidence":'
         '[{"field":"title","quote":"出典のイベント名"}]}]} のJSONだけにしてください。\n'
         + json.dumps(payload, ensure_ascii=False)
@@ -98,7 +100,9 @@ def verify_rewritten_events(events, rewrites):
             config=types.GenerateContentConfig(response_mime_type='application/json', temperature=0),
         )
     except Exception as exc:
-        raise RuntimeError(f'Gemini body verification failed: {type(exc).__name__}, code={getattr(exc, "code", "unknown")}') from None
+        failure = RuntimeError(f'Gemini body verification failed: {type(exc).__name__}, code={getattr(exc, "code", "unknown")}')
+        failure.verification_diagnostics = {'items': payload, 'stage': 'review_request_failed'}
+        raise failure from None
     finally:
         client.close()
     try:
@@ -109,23 +113,51 @@ def verify_rewritten_events(events, rewrites):
         failures = []
         for index, event in enumerate(events):
             review = by_id[str(index)]
-            evidence = review.get('evidence', [])
             facts = factual_payload(event)
-            grounded = bool(evidence) and all(
-                isinstance(entry.get('quote'), str) and entry['quote'].strip()
-                and entry.get('field') in facts and entry['quote'] in facts[entry['field']]
-                for entry in evidence)
-            if review.get('verdict') != 'supported' or review.get('issues') != [] or not grounded:
-                issues = review.get('issues')
-                if not isinstance(issues, list) or not issues:
-                    issues = ['本文の根拠を確認できない、または根拠の引用が不正']
-                failures.append({'index': index, 'title': event['title'], 'issues': [str(issue) for issue in issues],
-                                 'scope': 'Gemini review against collected facts'})
-        if failures:
+            issues = []
+            deterministic = check_body(event, rewrites[index])
+            issues.extend(deterministic['issues'])
+            verdict = review.get('verdict')
+            if verdict not in ('supported', 'unsupported', 'uncertain'):
+                issues.append('Geminiの判定値が不正: ' + str(verdict))
+            elif verdict != 'supported':
+                issues.append('Geminiの判定: ' + verdict)
+            reported = review.get('issues')
+            if not isinstance(reported, list) or any(not isinstance(i, str) for i in reported):
+                issues.append('Geminiの問題一覧の形式が不正')
+            else:
+                issues.extend(reported)
+            evidence = review.get('evidence')
+            if not isinstance(evidence, list) or not evidence:
+                issues.append('根拠の引用がありません')
+            else:
+                for entry in evidence:
+                    if not isinstance(entry, dict):
+                        issues.append('根拠の引用の形式が不正')
+                        continue
+                    field, quote = entry.get('field'), entry.get('quote')
+                    if not isinstance(field, str) or field not in facts:
+                        issues.append('根拠のフィールドが不正: ' + str(field))
+                    elif not isinstance(quote, str) or not quote.strip():
+                        issues.append('根拠の引用が空または文字列ではありません: ' + field)
+                    elif quote not in facts[field]:
+                        issues.append('出典の該当フィールドと引用が一致しません: ' + field)
+            review['_issues'] = list(dict.fromkeys(issues))
+            if issues:
+                failures.append({'index': index, 'title': event['title'],
+                                 'issues': review['_issues'],
+                                 'scope': 'deterministic and Gemini review against collected facts',
+                                 'body': rewrites[index], 'source_facts': facts,
+                                 'gemini_review': {k:v for k,v in review.items() if k != '_issues'},
+                                 'deterministic_review': deterministic})
+        if failures and not allow_partial:
             raise BodyVerificationError(failures)
         return [by_id[str(index)] for index in range(len(events))]
     except (ValueError, KeyError, TypeError, AttributeError):
-        raise RuntimeError('Gemini body verification JSON is invalid; publication is held') from None
+        failure = RuntimeError('Gemini body verification JSON is invalid; publication is held')
+        failure.verification_diagnostics = {'items': payload, 'stage': 'invalid_review_json',
+                                            'review_response': str(response.text)[:200000]}
+        raise failure from None
 
 def verify_and_rewrite_event(raw_title, raw_summary="", raw_description="", city="静岡県"):
     """
