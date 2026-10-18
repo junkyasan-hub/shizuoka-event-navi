@@ -1,0 +1,49 @@
+name: Apply Manual Event Change
+on:
+  workflow_dispatch:
+    inputs:
+      change:
+        description: '変更内容JSON（手動編集画面からコピー）'
+        required: true
+        type: string
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Apply reviewed change with backup
+        env:
+          MANUAL_CHANGE: ${{ inputs.change }}
+        run: |
+          python -c 'import os,pathlib; pathlib.Path(os.environ["RUNNER_TEMP"],"change.json").write_text(os.environ["MANUAL_CHANGE"],encoding="utf-8")'
+          python manual_events.py --change "$RUNNER_TEMP/change.json" --backup "$RUNNER_TEMP/manual-backup/events.db"
+          python generate_site.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual-event-backup
+          path: ${{ runner.temp }}/manual-backup/
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Save database and site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add events.db dist/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Apply reviewed manual event change'
+            git push origin HEAD:main
+          fi
