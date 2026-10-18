@@ -55,7 +55,7 @@ def date_bounds(value):
         tail = text[first.end():]
         end = start
         full = re.search(r'(20\d{2})\s*[年/.-]\s*(\d{1,2})\s*[月/.-]\s*(\d{1,2})\s*日?', tail)
-        short = re.search(r'(\d{1,2})\s*[月/]\s*(\d{1,2})\s*日?', tail)
+        short = re.search(r'(?<![\d:])(\d{1,2})\s*[月/]\s*(\d{1,2})\s*日?(?![\d:])', tail)
         day = re.search(r'[〜~～・]\s*(\d{1,2})\s*日', tail)
         if full:
             end = dt.date(*map(int, full.groups()))
@@ -114,7 +114,12 @@ def parse_detail(source, url, html):
         value = label.find_next_sibling()
         if value and value.name == 'dd':
             fields[clean(label.get_text(' ', strip=True))] = value.get_text(' ', strip=True)
-    heading = soup.select_one('h1.title') if source.city == '沼津市' else soup.select_one('h2')
+    if source.city == '沼津市':
+        heading = soup.select_one('h1.title')
+    elif source.city == '熱海市':
+        heading = soup.select_one('h1')
+    else:
+        heading = soup.select_one('h2')
     if not heading:
         raise ValueError('event heading missing')
 
@@ -127,7 +132,14 @@ def parse_detail(source, url, html):
         get('イベント会場名', '会場名', '開催場所', 'イベント開催場所'),
         get('住所'), get('料金'), get('駐車場'),
     )
-    event['schedule_note'] = clean(get('開催時間'))
+    event['schedule_note'] = clean(' '.join(filter(None, (
+        get('開催時間'), get('休館日', '定休日', '定休日/休業日', '休業日')))))
+    if source.city == '熱海市':
+        # Extract a factual program time, not the site's descriptive prose.
+        footbath = re.search(r'【足湯】.{0,40}?(\d{1,2}:\d{2})[~〜～](\d{1,2}:\d{2})',
+                             clean(soup.get_text(' ', strip=True)))
+        if footbath:
+            event['source_notes'] = f'足湯: {footbath.group(1)}〜{footbath.group(2)}'
     return event
 
 
@@ -182,6 +194,9 @@ def parse_hamamatsu(source, content):
         # The CSV is CC BY; preserve date/time remarks instead of discarding them.
         event['schedule_note'] = clean(' '.join(row.get(k, '') for k in (
             '開始時間', '終了時間', '開始日時特記事項')))
+        # Licensed CC BY source text can support deadlines/program details in
+        # existing prose. It is evidence, not an instruction to the model.
+        event['source_notes'] = clean(' '.join(row.get(k, '') for k in ('説明', '備考')))
         events.append(event)
     return events
 
