@@ -1,4 +1,6 @@
 import copy
+import contextlib
+import io
 import json
 from pathlib import Path
 import shutil
@@ -93,26 +95,36 @@ class CollectionTests(unittest.TestCase):
             shutil.copy2('events.db', db)
             with sqlite3.connect(db) as conn:
                 count = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
+                had_imports = conn.execute("SELECT name FROM sqlite_master WHERE name='event_imports'").fetchone() is not None
+                imports_before = conn.execute('SELECT * FROM event_imports ORDER BY source_key').fetchall() if had_imports else []
                 first, invalid = self.event(), self.event()
                 invalid['city'] = 'unsupported'
                 rewrite = {'summary': '紹介', 'description': '説明'}
                 with self.assertRaises(KeyError):
                     collect_events.save_events(conn, [(first, None), (invalid, None)], [rewrite, rewrite])
                 self.assertEqual(conn.execute('SELECT COUNT(*) FROM events').fetchone()[0], count)
-                self.assertIsNone(conn.execute(
-                    "SELECT name FROM sqlite_master WHERE name='event_imports'").fetchone())
+                self.assertEqual(conn.execute(
+                    "SELECT name FROM sqlite_master WHERE name='event_imports'").fetchone() is not None, had_imports)
+                if had_imports:
+                    self.assertEqual(conn.execute('SELECT * FROM event_imports ORDER BY source_key').fetchall(), imports_before)
 
     def test_gemini_plain_generation_and_fact_fields_unchanged(self):
         client = Mock()
         client.models.generate_content.return_value = SimpleNamespace(text=json.dumps({'items': [
             {'id': '0', 'summary': '紹介', 'description': '説明', 'title': '変更してはいけない'}]}))
         event = self.event()
+        client.models.generate_content.side_effect = [client.models.generate_content.return_value,
+            SimpleNamespace(text=json.dumps({'items': [{'id': '0', 'verdict': 'supported', 'issues': [],
+                'evidence': [{'field': 'title', 'quote': event['title']}]}]}))]
         original = copy.deepcopy(event)
         with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-only-key'}), patch.object(
                 ai_rewriter.genai, 'Client', return_value=client):
             result = ai_rewriter.rewrite_collected_events([event])
-        self.assertEqual(result, [{'summary': '紹介', 'description': '説明'}])
+        self.assertEqual(result[0]['summary'], '紹介')
+        self.assertEqual(result[0]['description'], '説明')
+        self.assertEqual(result[0]['_body_verification']['method'], 'deterministic_and_gemini')
         self.assertEqual(event, original)
+        self.assertEqual(client.models.generate_content.call_count, 2)
         config = client.models.generate_content.call_args.kwargs['config']
         self.assertFalse(config.tools)
 
@@ -134,8 +146,75 @@ class CollectionTests(unittest.TestCase):
             shutil.copy2('events.db', db)
             before = db.read_bytes()
             with patch.object(collect_events, 'collect', side_effect=RuntimeError('source down')):
-                self.assertEqual(collect_events.main(['--db', str(db), '--no-rewrite']), 1)
+                self.assertEqual(collect_events.main(['--max-rechecks', '0', '--db', str(db), '--no-rewrite']), 1)
             self.assertEqual(db.read_bytes(), before)
+
+    def test_partial_collection_rewrites_other_sources_and_reports_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / 'events.db'
+            report_path = Path(tmp) / 'report.json'
+            summary_path = Path(tmp) / 'summary.md'
+            shutil.copy2('events.db', db)
+            with sqlite3.connect(db) as conn:
+                before = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
+
+            def collect_source(source, fetcher, limit):
+                if source.city == '沼津市':
+                    raise TimeoutError('Read timed out (read timeout=30)')
+                return [factual_event(source, source.url + '#2099-test',
+                                      '2099年テスト催事-' + source.city, '2099年10月18日', '会場')]
+
+            def rewrite(events):
+                return [{'summary': 'Geminiで生成した紹介', 'description': '基本情報による説明'} for _ in events]
+
+            output = io.StringIO()
+            with patch.object(collect_events, 'collect', side_effect=collect_source), patch.object(
+                    ai_rewriter, 'rewrite_collected_events', side_effect=rewrite) as rewrite_mock, patch.dict(
+                    'os.environ', {'GEMINI_API_KEY': 'test-only-key', 'GITHUB_ACTIONS': 'true',
+                                   'GITHUB_STEP_SUMMARY': str(summary_path)}), contextlib.redirect_stdout(output):
+                code = collect_events.main(['--max-rechecks', '0', '--db', str(db), '--allow-partial', '--output', str(report_path)])
+            self.assertEqual(code, 0)
+            self.assertEqual(rewrite_mock.call_count, 1)
+            self.assertEqual(len(rewrite_mock.call_args.args[0]), 4)
+            report = json.loads(report_path.read_text())
+            self.assertEqual(report['status'], 'partial')
+            self.assertEqual(report['failed_sources'], ['沼津観光ポータル'])
+            self.assertEqual(report['saved'], 4)
+            self.assertIn('::warning', output.getvalue())
+            self.assertIn('取得失敗', summary_path.read_text())
+            with sqlite3.connect(db) as conn:
+                self.assertEqual(conn.execute('SELECT COUNT(*) FROM events').fetchone()[0], before + 4)
+
+    def test_partial_mode_still_fails_when_all_sources_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / 'events.db'
+            shutil.copy2('events.db', db)
+            before = db.read_bytes()
+            with patch.object(collect_events, 'collect', side_effect=TimeoutError('timeout')):
+                self.assertEqual(collect_events.main(['--max-rechecks', '0', '--db', str(db), '--no-rewrite', '--allow-partial']), 1)
+            self.assertEqual(db.read_bytes(), before)
+
+    def test_partial_mode_does_not_hide_rewrite_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / 'events.db'
+            report_path = Path(tmp) / 'report.json'
+            shutil.copy2('events.db', db)
+            before = db.read_bytes()
+
+            def collect_source(source, fetcher, limit):
+                if source.city == '沼津市':
+                    raise TimeoutError('timeout')
+                return [self.event()]
+
+            with patch.object(collect_events, 'collect', side_effect=collect_source), patch.object(
+                    ai_rewriter, 'rewrite_collected_events', side_effect=RuntimeError('Gemini HTTP 429')), patch.dict(
+                    'os.environ', {'GEMINI_API_KEY': 'test-only-key'}):
+                code = collect_events.main(['--max-rechecks', '0', '--db', str(db), '--allow-partial', '--output', str(report_path)])
+            self.assertEqual(code, 1)
+            self.assertEqual(db.read_bytes(), before)
+            report = json.loads(report_path.read_text())
+            self.assertEqual(report['status'], 'failed')
+            self.assertEqual(report['saved'], 0)
 
     def test_robots_disallow_stops_requests(self):
         fetcher = Fetcher()
