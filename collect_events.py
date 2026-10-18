@@ -19,11 +19,11 @@ from event_verification import (require_supported_bodies, recheck_published,
 LOG = logging.getLogger(__name__)
 COORDS = {'浜松市': (34.7108, 137.7261), '静岡市': (34.9756, 138.3828),
           '沼津市': (35.1003, 138.8596), '伊東市': (34.9669, 139.0984),
-          '下田市': (34.6781, 138.9453)}
+          '下田市': (34.6781, 138.9453), '熱海市': (34.9619, 139.0710)}
 
 
 def digest(event):
-    return hashlib.sha256(json.dumps(event, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    return hashlib.sha256(json.dumps({k:v for k,v in event.items() if not k.startswith('_')}, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
 def source_key(event):
@@ -106,6 +106,12 @@ def save_events(conn, selected, rewrites):
         for (event, event_id), rewrite in zip(selected, rewrites):
             if event_id in protected:
                 raise ValueError("手動編集したイベントは自動更新できません")
+            if '_auto_correction' in event:
+                cursor = conn.execute('SELECT * FROM events WHERE id=?',(event_id,))
+                current = cursor.fetchone()
+                current = dict(zip([c[0] for c in cursor.description],current)) if current else None
+                if current != event['_auto_correction']['before']:
+                    raise ValueError('自動訂正の確認後にデータが変わったため保存を中止')
             lat, lng = COORDS[event['city']]
             has_coordinates = 'lat' in event and 'lng' in event
             if has_coordinates:
@@ -131,6 +137,11 @@ def save_events(conn, selected, rewrites):
                 event['fee'], '出典をご確認ください', event['parking_info'],
                 '出典をご確認ください', 0, 0, 0, '一般',
             )
+            if '_auto_correction' in event:
+                values = list(values)
+                for field in ('image_url', 'tags', 'target_age', 'category_scene'):
+                    values[fields.index(field)] = event['_auto_correction']['before'].get(field, values[fields.index(field)])
+                values = tuple(values)
             if event_id is None:
                 event_id = conn.execute(
                     f'INSERT INTO events ({",".join(fields)}) VALUES ({",".join("?" for _ in fields)})',
@@ -143,6 +154,12 @@ def save_events(conn, selected, rewrites):
                 facts_hash=excluded.facts_hash, fetched_at=excluded.fetched_at''',
                          (source_key(event), event_id, digest(event), event['source_name'],
                           dt.datetime.now(dt.timezone.utc).isoformat()))
+            if '_auto_correction' in event:
+                conn.execute('CREATE TABLE IF NOT EXISTS event_auto_correction_history (id INTEGER PRIMARY KEY, event_id INTEGER NOT NULL, corrected_at TEXT NOT NULL, evidence_json TEXT NOT NULL)')
+                after = dict(zip(fields, values))
+                conn.execute('INSERT INTO event_auto_correction_history (event_id,corrected_at,evidence_json) VALUES (?,?,?)',
+                             (event_id, dt.datetime.now(dt.timezone.utc).isoformat(),
+                              json.dumps({**event['_auto_correction'], 'after': after, 'body_review': rewrite.get('_body_verification', {})},ensure_ascii=False)))
             verification = {
                 'deterministic': check_body(event, rewrite),
                 **rewrite.get('_body_verification', {'method': 'deterministic_only'}),
@@ -197,6 +214,8 @@ def main(argv=None):
                                   {result['source'] for result in reports if 'error' not in result},
                                   fetcher, args.max_rechecks)
         pending = pending_events(conn, events)
+        from automatic_corrections import plan_corrections
+        corrections, correction_holds = plan_corrections(conn, checks, observed)
     # A changed source must be reviewed before replacing an existing publication.
     held_ids = {item['event_id'] for item in checks if item['status'] != 'matched'}
     held_urls = {item['source_url'] for item in checks if item['status'] != 'matched'}
@@ -204,7 +223,12 @@ def main(argv=None):
             if event_id in held_ids or event['source_url'] in held_urls]
     pending = [(event, event_id) for event, event_id in pending
                if event_id not in held_ids and event['source_url'] not in held_urls]
-    selected = select_fairly(pending, args.max_events)
+    correction_ids = {event_id for _, event_id in corrections}
+    correction_urls = {event['source_url'] for event, _ in corrections}
+    pending = [(event,event_id) for event,event_id in pending
+               if event_id not in correction_ids and event['source_url'] not in correction_urls]
+    held = [(event,event_id) for event,event_id in held if event_id not in correction_ids and event['source_url'] not in correction_urls]
+    selected = corrections[:args.max_events] + select_fairly(pending, max(0, args.max_events-len(corrections)))
     if args.recheck_only:
         selected = []
     report = {'sources': reports, 'eligible': len(events), 'pending': len(pending),
@@ -214,6 +238,9 @@ def main(argv=None):
     report['published_recheck'] = {'counts': check_counts, 'results': checks}
     report['held_updates'] = [{'event_id': event_id, 'title': event['title'], 'source_url': event['source_url']}
                               for event, event_id in held]
+    report['auto_corrections'] = []
+    report['auto_correction_holds'] = correction_holds
+    report['auto_correction_candidates'] = [dict(event_id=i,title=e['title'],source_url=e['source_url']) for e,i in corrections]
     report['body_verification'] = 'not_run'
     report['recheck_only'] = args.recheck_only
     successful_sources = sum('error' not in result for result in reports)
@@ -270,6 +297,8 @@ def main(argv=None):
                 with sqlite3.connect(db_path) as conn:
                     save_events(conn, approved, approved_bodies)
                 report['saved'] = len(approved)
+                report['auto_corrections'] = [dict(event_id=i,title=e['title'],**e['_auto_correction'])
+                                              for e,i in approved if '_auto_correction' in e]
         except Exception as exc:
             LOG.error('Import failed: %s', exc)
             blocked = True
@@ -309,6 +338,7 @@ def main(argv=None):
                   f'確認通過: {report.get("body_passed", 0)}件 / 本文保留: {report.get("body_held", 0)}件', '',
                   '### 掲載済みイベントの再確認', '',
                   '日時・会場・料金等の照合であり、本文の全記述を保証する判定ではありません。', '',
+                  '以下は訂正前の照合結果です。今回保存した訂正は「公式詳細情報による自動訂正」を確認してください。', '',
                   '| 判定 | 件数 |', '| --- | ---: |']
         for status, count in check_counts.items():
             lines.append(f'| {STATUS_LABELS[status]} | {count} |')
@@ -317,6 +347,9 @@ def main(argv=None):
             title = item['title'].replace('|', '／').replace('\n', ' ')
             issues = ' / '.join(item['issues']).replace('|', '／').replace('\n', ' ')
             lines.append(f'| {item["event_id"]} | {title} | {issues} |')
+        lines += ['', f'公式詳細情報による自動訂正: {len(report["auto_corrections"])}件', '']
+        for item in report['auto_corrections']:
+            lines.append(f'- ID {item["event_id"]}: ' + item['title'].replace('\n', ' '))
         lines += ['', '### 本文の保留理由', '', '| イベント | 理由 |', '| --- | --- |']
         for item in report.get('body_issues', []):
             title = item['title'].replace('|', '／').replace('\n', ' ')
