@@ -48,6 +48,18 @@ jobs:
         run: |
           python collect_events.py --max-events 20 --allow-partial --output "$RUNNER_TEMP/collection-report.json"
 
+      - name: Import checked permanent restaurants
+        run: python import_gourmet.py --backup "$RUNNER_TEMP/gourmet-backup/events.db"
+
+      - name: Preserve database before gourmet import
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gourmet-import-backup
+          path: ${{ runner.temp }}/gourmet-backup/
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Regenerate Static HTML Site
         run: |
           python generate_site.py
