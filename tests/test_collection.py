@@ -164,7 +164,7 @@ class CollectionTests(unittest.TestCase):
                 return [factual_event(source, source.url + '#2099-test',
                                       '2099年テスト催事-' + source.city, '2099年10月18日', '会場')]
 
-            def rewrite(events):
+            def rewrite(events, **kwargs):
                 return [{'summary': 'Geminiで生成した紹介', 'description': '基本情報による説明'} for _ in events]
 
             output = io.StringIO()
