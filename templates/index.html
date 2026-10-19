@@ -10,6 +10,53 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+    :root { --ink:#183d35; --accent:#14785f; }
+    body { background:#f7f8f4; }
+    button, input, select { min-height:44px; }
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid #d59d39;outline-offset:3px; }
+    .guide-hero { background:#e9f1e9; color:var(--ink); padding:32px 16px 24px; border-bottom:1px solid #d9e4d8; }
+    .guide-hero h1 { color:var(--ink); font-size:clamp(28px,5vw,44px);line-height:1.45;letter-spacing:-.04em; }
+    .guide-hero p { color:#50685d;font-size:14px; }
+    .guide-hero input { box-shadow:none; border:1px solid #ccdacf;font-size:16px; }
+    .guide-hero label { color:#496455; }
+    #regionChips { flex-wrap:nowrap;overflow:auto;padding-bottom:4px; }
+    #regionChips button { white-space:nowrap;flex-shrink:0;background:white;color:var(--ink);border:1px solid #cdded0;box-shadow:none; }
+    #regionChips button.bg-sky-500 { background:var(--accent);color:white;border-color:var(--accent); }
+    .featured-strip { display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:8px; }
+    .featured-strip>a { flex:0 0 260px;scroll-snap-align:start;box-shadow:none; }
+    .featured-strip img { height:100%; }
+    #results { scroll-margin-top:84px; }
+    #eventsGrid .event-card { box-shadow:none;border-radius:18px; }
+    #eventsGrid .event-card h3 { font-size:17px;line-height:1.6; }
+    #eventsGrid .event-card p { font-size:14px; }
+    .results-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px; }
+    .results-heading h2 {font-size:22px;font-weight:800;color:var(--ink);}
+    #loadMore { display:block;margin:24px auto;padding:12px 32px;border:1px solid #b9d0c2;border-radius:99px;background:white;color:var(--ink);font-weight:700; }
+    #loadMore.hidden {display:none;}
+    @media(max-width:767px) {
+        .guide-hero {padding-top:24px;}
+        .guide-hero .text-center {text-align:left;}
+        .featured-strip>a {flex-basis:235px;}
+        #eventsGrid {gap:12px;}
+        #eventsGrid .event-card {display:grid;grid-template-columns:104px minmax(0,1fr);align-items:stretch;}
+        #eventsGrid .event-card.hidden {display:none;}
+        #eventsGrid .event-card>div:first-child {height:100%;min-height:174px;}
+        #eventsGrid .event-card>div:first-child>div {display:none;}
+        #eventsGrid .event-card>div:nth-child(2) {padding:14px;gap:8px;}
+        #eventsGrid .event-card h3 {font-size:15px;}
+        #eventsGrid .event-card p {display:none;}
+        #eventsGrid .event-card .space-y-3 {margin-top:0;padding-top:8px;}
+        #eventsGrid .event-card .space-y-3>div:first-child:empty {display:none;}
+        #scenePills {display:none;}
+        #mobileSidebarToggle {min-height:44px;}
+        #topDatePresets {gap:6px;}
+        #typeTabs {width:100%;}
+        #typeTabs button {flex:1;padding:8px;font-size:12px;}
+        #calendarView {padding:12px;}
+        .fc .fc-toolbar {flex-wrap:wrap;gap:12px;}
+        .fc .fc-toolbar-title {font-size:18px;}
+    }
+
     .fc-event { cursor: pointer; border-radius: 6px; font-size: 0.8rem; padding: 2px 4px; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
@@ -22,17 +69,15 @@
 
 {% block content %}
 <!-- Hero Banner with Integrated Search & Region Quick Chips -->
-<div class="relative bg-gradient-to-br from-slate-900 via-sky-950 to-indigo-950 text-white border-b border-sky-900/50 py-10 px-4 sm:px-6 lg:px-8 shadow-xl">
+<div class="guide-hero">
     <div class="max-w-7xl mx-auto space-y-6">
         <div class="space-y-2 text-center sm:text-left max-w-3xl">
-            <div class="inline-flex items-center gap-2 px-3 py-1 bg-sky-500/20 text-sky-300 text-xs font-bold rounded-full border border-sky-400/30 backdrop-blur-md">
-                ✨ 静岡県公式オープンデータ ＆ AI自動ファクトチェック連動
-            </div>
+            <p class="text-xs font-bold tracking-widest">SHIZUOKA · お出かけのヒント</p>
             <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                今週末どこ行く？ 静岡県お出かけ・イベントガイド
+                次のお休み、<br>静岡のどこへ行こう。
             </h1>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                静岡市・沼津・熱海・伊豆・浜松など、県内全域の最新イベント・定番観光スポット・ご当地グルメ情報を全自動集約！
+                今日のイベントから、いつもの街のおいしいお店まで。日付とエリアから見つけよう。
             </p>
         </div>
 
@@ -42,8 +87,8 @@
                 <svg class="w-5 h-5 absolute left-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <input type="text" id="searchInput" placeholder="キーワード・イベント名・会場・エリアで探す（例: 花火, クラフト, 駿府城, 沼津）" class="w-full pl-12 pr-10 py-3.5 bg-white text-slate-900 rounded-2xl text-sm font-medium shadow-lg border border-white/20 focus:outline-none focus:ring-4 focus:ring-sky-500/50 transition-all placeholder:text-slate-400">
-                <button id="heroClearSearchBtn" class="hidden absolute right-4 text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
+                <input type="text" id="searchInput" aria-label="キーワードで探す" placeholder="何を楽しむ？ 例：花火、カフェ、伊東" class="w-full pl-12 pr-10 py-3.5 bg-white text-slate-900 rounded-2xl text-sm font-medium shadow-lg border border-white/20 focus:outline-none focus:ring-4 focus:ring-sky-500/50 transition-all placeholder:text-slate-400">
+                <button id="heroClearSearchBtn" aria-label="検索文字を消す" class="hidden absolute right-4 text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
             </div>
         </div>
 
@@ -52,19 +97,19 @@
             <label class="text-[11px] font-bold text-sky-200 uppercase tracking-wider block">📍 エリアで絞り込み</label>
             <div class="flex flex-wrap items-center gap-2" id="regionChips">
                 <button data-region="all" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-sky-500 text-white shadow-md shadow-sky-500/30">
-                    📍 静岡県内 全エリア
+                    全エリア
                 </button>
                 <button data-region="chubu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
-                    🗻 富士・静岡市 (中部)
+                    中部・静岡
                 </button>
                 <button data-region="tobu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
-                    🌊 沼津・三島・富士 (東部)
+                    東部・沼津・富士
                 </button>
                 <button data-region="izu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
-                    ♨️ 熱海・伊東・伊豆 (伊豆)
+                    伊豆・熱海・伊東
                 </button>
                 <button data-region="seibu" class="region-chip-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 hover:bg-white/20 text-white border border-white/15">
-                    🏯 浜松・遠州 (西部)
+                    西部・浜松
                 </button>
             </div>
         </div>
@@ -76,14 +121,14 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
-            <span class="text-xl">🔥</span>
-            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">注目のピックアップイベント</h2>
+            <span class="text-xl">🌿</span>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">お出かけのヒント</h2>
             <span class="px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider">FEATURED</span>
         </div>
-        <span class="text-xs font-semibold text-slate-500 hidden sm:inline">静岡県内のおすすめ主要イベント</span>
+        <span class="text-xs font-semibold text-slate-500 hidden sm:inline">気になる場所をチェック</span>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="featured-strip">
         {% for fe in featured_events %}
         <a href="events/{{ fe.id }}.html" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-200/80 transition-all flex flex-col bg-white">
             <div class="h-36 overflow-hidden relative bg-slate-100">
@@ -192,7 +237,7 @@
                 </button>
             </div>
 
-            <button id="mobileSidebarToggle" class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
+            <button id="mobileSidebarToggle" aria-controls="sidebarFilter" aria-expanded="false" class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 text-xs font-bold border border-slate-200">
                 <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                 </svg>
@@ -298,12 +343,15 @@
         </aside>
 
         <!-- Right Main Content -->
-        <main class="lg:col-span-3 space-y-6">
+        <section id="results" class="lg:col-span-3 space-y-6" aria-label="検索結果">
+            <div class="results-heading"><h2>行きたい場所を探す</h2><label class="text-xs text-slate-600 flex items-center gap-2"><input type="checkbox" id="showEnded">終了分も表示</label></div>
+            <p id="resultsSummary" class="text-sm text-slate-500" role="status" aria-live="polite"></p>
 
             <!-- Card Grid View -->
             <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for event in events %}
                 <div class="event-card bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 hover:shadow-md transition-all flex flex-col group relative {% if event.is_ended %}opacity-75 bg-slate-50/80{% endif %}"
+                     data-ended="{{ 1 if event.is_ended else 0 }}"
                      data-type="{{ event.item_type }}"
                      data-city="{{ event.city }}"
                      data-title="{{ event.title }}"
@@ -324,7 +372,9 @@
                         
                         <!-- Badges -->
                         <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                            {% if event.is_ended %}
+                            {% if event.item_type == "gourmet" %}
+                            <span class="px-2.5 py-1 bg-amber-600 text-white text-xs rounded-lg">常設飲食店</span>
+                            {% elif event.is_ended %}
                             <span class="px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded-lg border border-slate-700">
                                 🔒 終了
                             </span>
@@ -396,6 +446,8 @@
                 {% endfor %}
             </div>
 
+            <button id="loadMore" type="button">もっと見る</button>
+
             <!-- Calendar View Canvas (Hidden by default) -->
             <div id="calendarView" class="hidden bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
                 <div class="flex items-center justify-between mb-4">
@@ -412,7 +464,7 @@
                 <p class="text-xs text-slate-500">期間を広げるか、別のキーワード・エリアで検索してみてください。</p>
             </div>
 
-        </main>
+        </section>
 
     </div>
 </div>
@@ -494,6 +546,11 @@
             baseToday = new Date(2026, 8, 27);
         }
 
+        const showEnded = document.getElementById('showEnded');
+        const loadMore = document.getElementById('loadMore');
+        let displayLimit = 12;
+        showEnded.addEventListener('change', () => filterEvents());
+        loadMore.addEventListener('click', () => { displayLimit += 12; filterEvents(true); });
         // 初期表示は「全期間」
         setPreset('all');
 
@@ -519,7 +576,7 @@
                 activePresetBadge.textContent = '今週(7日間)';
             } else if (presetType === 'weekend') {
                 const day = baseToday.getDay();
-                const diffToSat = (6 - day + 7) % 7;
+                const diffToSat = day === 0 ? -1 : (6 - day + 7) % 7;
                 const sat = addDays(baseToday, diffToSat);
                 const sun = addDays(sat, 1);
                 startDateInput.value = formatISO(sat);
@@ -572,10 +629,13 @@
         // Mobile Sidebar Toggle
         mobileSidebarToggle.addEventListener('click', () => {
             sidebarFilter.classList.toggle('hidden');
+            mobileSidebarToggle.setAttribute('aria-expanded', String(!sidebarFilter.classList.contains('hidden')));
+            if (!sidebarFilter.classList.contains('hidden')) sidebarFilter.scrollIntoView({behavior:'smooth',block:'start'});
         });
 
         // Main Filter Function
-        function filterEvents() {
+        function filterEvents(keepLimit = false) {
+            if (keepLimit !== true) displayLimit = 12;
             const query = searchInput.value.toLowerCase().trim();
             const startVal = startDateInput.value;
             const endVal = endDateInput.value;
@@ -608,7 +668,7 @@
 
                 const matchesQuery = !query || title.includes(query) || summary.includes(query) || location.includes(query) || tags.includes(query) || city.includes(query);
                 const matchesType = currentType === 'all' || type === currentType;
-                const matchesScene = currentScene === 'all' || scene === currentScene || (currentScene === 'family' && stroller) || (currentScene === 'rainy' && rainy);
+                const matchesScene = currentScene === 'all' || scene === currentScene || (currentScene === 'family' && scene.includes('ファミリー')) || (currentScene === 'couple' && scene.includes('カップル')) || (currentScene === 'family' && stroller) || (currentScene === 'rainy' && rainy);
                 const matchesCity = selectedCity === 'all' || city === selectedCity;
                 const matchesTag = currentTag === 'all' || tags.includes(currentTag.toLowerCase());
 
@@ -632,15 +692,25 @@
                     }
                 }
 
-                if (matchesQuery && matchesType && matchesScene && matchesCity && matchesRegion && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
-                    card.classList.remove('hidden');
+                if ((showEnded.checked || card.dataset.ended !== '1') && matchesQuery && matchesType && matchesScene && matchesCity && matchesRegion && matchesTag && matchesParking && matchesStroller && matchesRainy && matchesDate) {
+                    card.dataset.matched = '1';
                     count++;
+                    card.classList.toggle('hidden', count > displayLimit);
                 } else {
+                    card.dataset.matched = '0';
                     card.classList.add('hidden');
                 }
             });
 
             visibleCount.textContent = count;
+            document.getElementById('resultsSummary').textContent = `${count}件のうち${Math.min(count, displayLimit)}件を表示`;
+            loadMore.classList.toggle('hidden', count <= displayLimit || !calendarView.classList.contains('hidden'));
+            if (calendarInstance) {
+                const ids = new Set(cards.filter(c => c.dataset.matched === '1').map(c => c.querySelector('a').getAttribute('href').match(/(\d+)\.html/)[1]));
+                calendarInstance.removeAllEvents();
+                calendarInstance.addEventSource(calendarEventsData.filter(e => ids.has(String(e.id))));
+            }
+            [typeButtons, presetButtons, regionChipButtons].forEach(group => group.forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('bg-sky-600') || b.classList.contains('bg-sky-500')))));
             if (count === 0) {
                 noResults.classList.remove('hidden');
             } else {
@@ -723,6 +793,8 @@
         });
 
         resetAllFilters.addEventListener('click', () => {
+            showEnded.checked = false;
+            heroClearSearchBtn.classList.add('hidden');
             searchInput.value = '';
             citySelect.value = 'all';
             checkFreeParking.checked = false;
@@ -759,6 +831,7 @@
         viewGridBtn.addEventListener('click', () => {
             eventsGrid.classList.remove('hidden');
             calendarView.classList.add('hidden');
+            filterEvents(true);
             viewGridBtn.classList.remove('text-slate-600');
             viewGridBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewCalendarBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
@@ -768,6 +841,7 @@
         viewCalendarBtn.addEventListener('click', () => {
             eventsGrid.classList.add('hidden');
             calendarView.classList.remove('hidden');
+            loadMore.classList.add('hidden');
             viewCalendarBtn.classList.remove('text-slate-600');
             viewCalendarBtn.classList.add('bg-white', 'text-sky-600', 'shadow');
             viewGridBtn.classList.remove('bg-white', 'text-sky-600', 'shadow');
@@ -788,12 +862,13 @@
                     center: 'title',
                     right: 'dayGridMonth,listMonth'
                 },
-                events: calendarEventsData,
+                events: [],
                 eventClick: function(info) {
                     openModal(info.event);
                 }
             });
             calendarInstance.render();
+            filterEvents(true);
         }
     });
 
