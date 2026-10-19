@@ -133,15 +133,10 @@ def enrich_item(item):
     item["is_ended"] = is_ended
     item["status_label"] = status_label
     
-    # 静岡のジャンル・キーワード別スマート高画質画像の設定
+    # A neutral graphic must not imply that unrelated stock imagery depicts the venue.
     if not item.get("image_url") or "unsplash.com" in item.get("image_url", ""):
-        item["image_url"] = get_smart_shizuoka_image(
-            title=item.get("title", ""),
-            summary=item.get("summary", ""),
-            tags=item.get("tags", ""),
-            city=item.get("city", ""),
-            item_type=item.get("item_type", "")
-        )
+        item["image_url"] = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect width='640' height='360' fill='%23e9f1e9'/%3E%3Cpath d='M160 270L280 110L400 270Z' fill='%23b6cec0'/%3E%3Ccircle cx='440' cy='110' r='32' fill='%23dbc99c'/%3E%3C/svg%3E"
+        item["image_is_placeholder"] = True
 
     if not item.get("official_url") or "example.com" in item.get("official_url", ""):
         item["official_url"] = CITY_OFFICIAL_MAP.get(item["city"], "https://www.pref.shizuoka.jp/")
@@ -175,6 +170,9 @@ def enrich_item(item):
             }
         }
     }
+
+    if not item.get("lat") or not item.get("lng"):
+        json_ld["location"].pop("geo", None)
 
     if schema_type == "Event":
         json_ld["eventAttendanceMode"] = "https://schema.org/OfflineEventAttendanceMode"
@@ -250,6 +248,8 @@ def fetch_events():
     from manual_events import controls
     hidden = controls(conn)
     rows = [r for r in rows if not hidden.get(r["id"], 0)]
+    from publication_gate import approved_rows
+    rows = approved_rows(conn, rows)
     conn.close()
 
     items = [enrich_item(row) for row in rows]
@@ -317,11 +317,16 @@ def generate_site():
 
     from manual_events import build_editor, controls
     with get_db_connection() as conn:
-        build_editor(conn, os.path.join(OUTPUT_DIR, "manual-editor.html"))
-        for event_id, hidden in controls(conn).items():
-            if hidden:
-                with open(os.path.join(EVENTS_OUTPUT_DIR, f"{event_id}.html"), "w", encoding="utf-8") as page:
-                    page.write('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="robots" content="noindex"><title>非掲載</title><p>このイベントは現在掲載していません。</p><a href="../index.html">トップへ</a></html>')
+        # Public output must not contain the full unreviewed database, even in editor JSON.
+        with open(os.path.join(OUTPUT_DIR, "manual-editor.html"), "w", encoding="utf-8") as page:
+            page.write('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="robots" content="noindex"><title>管理画面</title><p>編集用データは公開サイトに出力しません。管理環境をご利用ください。</p></html>')
+        # ZIP deployment does not delete remote files: replace all unapproved and stale URLs.
+        published_ids = {event['id'] for event in events}
+        known_ids = {row[0] for row in conn.execute('SELECT id FROM events')}
+        known_ids.update(int(path.stem) for path in __import__('pathlib').Path(EVENTS_OUTPUT_DIR).glob('*.html') if path.stem.isdigit())
+        for event_id in known_ids - published_ids:
+            with open(os.path.join(EVENTS_OUTPUT_DIR, f"{event_id}.html"), "w", encoding="utf-8") as page:
+                page.write('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>掲載情報を確認中</title><main><h1>掲載情報を確認中です</h1><p>公式情報の確認が完了するまで、この情報は掲載を保留しています。イベントの中止を意味するものではありません。</p><a href="../index.html">確認済み情報の一覧へ</a></main></html>')
     print("[SUCCESS] Static site generation completed successfully!")
 
 if __name__ == "__main__":

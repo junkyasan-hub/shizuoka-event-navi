@@ -186,6 +186,8 @@ def fetch_items_from_db(item_type="all", scene=None, free_parking=False, strolle
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
+    from publication_gate import approved_rows
+    rows = approved_rows(conn, rows)
     conn.close()
 
     items = [enrich_item(row) for row in rows]
@@ -197,12 +199,7 @@ def fetch_items_from_db(item_type="all", scene=None, free_parking=False, strolle
     return items
 
 def get_all_cities():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT city FROM events ORDER BY city ASC")
-    rows = cursor.fetchall()
-    conn.close()
-    return [row["city"] for row in rows]
+    return sorted({item['city'] for item in fetch_items_from_db()})
 
 @app.get("/", response_class=HTMLResponse)
 async def index(
