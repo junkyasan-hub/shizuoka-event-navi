@@ -1,6 +1,8 @@
-name: Publish Checked Restaurants
+name: Publish Reviewed Information
 
 on:
+  schedule:
+    - cron: '30 18 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -26,12 +28,15 @@ jobs:
       - name: Import checked restaurants and generate site
         run: |
           python import_gourmet.py --backup "$RUNNER_TEMP/gourmet-backup/events.db"
+          python publication_gate.py --backup "$RUNNER_TEMP/publication-review-backup.db"
           python generate_site.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: gourmet-database-backup
-          path: ${{ runner.temp }}/gourmet-backup/
+          path: |
+            ${{ runner.temp }}/gourmet-backup/
+            ${{ runner.temp }}/publication-review-backup.db
           retention-days: 30
           if-no-files-found: ignore
       - name: Save database and generated pages

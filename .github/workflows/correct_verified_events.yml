@@ -25,6 +25,7 @@ jobs:
       - name: Back up and apply the verified corrections
         run: |
           python scripts/correct_verified_events.py --db events.db --backup-dir "$RUNNER_TEMP/event-corrections-backup" --retired-dir dist/events
+          python publication_gate.py --backup "$RUNNER_TEMP/publication-review-backup.db"
           python generate_site.py
       - name: Preserve the original database and changed records
         if: always()

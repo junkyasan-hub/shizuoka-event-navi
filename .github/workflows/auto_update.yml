@@ -62,6 +62,7 @@ jobs:
 
       - name: Regenerate Static HTML Site
         run: |
+          python publication_gate.py --backup "$RUNNER_TEMP/publication-review-backup.db"
           python generate_site.py
 
       - name: Deploy to StarServer via HTTPS Web Deploy (with FTP fallback)

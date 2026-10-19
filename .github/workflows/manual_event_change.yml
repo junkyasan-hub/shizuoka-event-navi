@@ -30,6 +30,7 @@ jobs:
         run: |
           python -c 'import os,pathlib; pathlib.Path(os.environ["RUNNER_TEMP"],"change.json").write_text(os.environ["MANUAL_CHANGE"],encoding="utf-8")'
           python manual_events.py --change "$RUNNER_TEMP/change.json" --backup "$RUNNER_TEMP/manual-backup/events.db"
+          python publication_gate.py --backup "$RUNNER_TEMP/publication-review-backup.db"
           python generate_site.py
       - uses: actions/upload-artifact@v4
         if: always()
