@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{% if event.is_ended %}[終了] {% endif %}{{ event.title }} | 静岡県お出かけ・イベントナビ【公式】{% endblock %}
-{% block description %}{{ event.summary }} 開催場所: {{ event.location }} ({{ event.city }})。{% if event.is_ended %}このイベントは終了いたしました。{% else %}開催中・最新お出かけ情報。公式サイトリンク＆マップ付き。{% endif %}{% endblock %}
+{% block title %}{% if event.is_ended %}[終了] {% endif %}{{ event.title }} | 静岡県お出かけ・イベントナビ{% endblock %}
+{% block description %}{{ event.summary }} 開催場所: {{ event.location }} ({{ event.city }})。{% if event.is_ended %}このイベントは終了いたしました。{% else %}出典の掲載内容を確認したお出かけ情報。{% endif %}{% endblock %}
 
 {% block og_title %}{% if event.is_ended %}[終了] {% endif %}{{ event.title }}{% endblock %}
 {% block og_description %}{{ event.summary }}{% endblock %}
@@ -55,9 +55,10 @@
             
             <!-- Hero Image Banner -->
             <div class="relative rounded-3xl overflow-hidden shadow-lg bg-slate-100 aspect-video md:aspect-[16/9]">
-                <img src="{{ event.image_url }}" alt="{{ event.title }}" class="w-full h-full object-cover {% if event.is_ended %} grayscale-[30%] {% endif %}">
+                <img src="{{ event.image_url }}" alt="{{ '案内用イラスト（現地写真ではありません）' if event.image_is_placeholder else event.title }}" class="w-full h-full object-cover {% if event.is_ended %} grayscale-[30%] {% endif %}">
                 <div class="absolute top-4 left-4 flex gap-2">
-                    {% if event.is_ended %}
+                    {% if event.item_type == "gourmet" %}<span class="px-3.5 py-1.5 bg-amber-600 text-white rounded-xl">常設飲食店</span>
+                    {% elif event.is_ended %}
                     <span class="px-3.5 py-1.5 bg-slate-800/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold rounded-xl shadow">
                         🔒 終了
                     </span>
@@ -113,13 +114,13 @@
                             🌐 公式サイト
                         </a>
                         {% endif %}
-                        <a href="https://maps.google.com/?q={{ event.location }}" target="_blank" rel="noopener noreferrer" 
+                        <a href="{{ event.google_maps_url }}" target="_blank" rel="noopener noreferrer" 
                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1.5">
                             📍 Google Map
                         </a>
                     </div>
                 </div>
-                <div id="detailMap" class="w-full h-80 rounded-2xl border border-slate-200 shadow-inner z-10"></div>
+                {% if event.lat and event.lng %}<div id="detailMap" class="w-full h-80 rounded-2xl border border-slate-200 shadow-inner z-10"></div>{% else %}<p class="text-sm text-slate-500">正確な座標が未確認のため、地図のピンは表示していません。住所で地図を検索できます。</p>{% endif %}
                 <p class="text-xs text-slate-500">📍 住所: {{ event.address if event.address else event.location }}</p>
             </div>
         </div>
@@ -134,6 +135,9 @@
                     基本情報
                 </h3>
 
+                {% if event.verified_on %}
+                <p class="text-xs text-slate-600">公式掲載情報の確認日：{{ event.verified_on }}<br><a href="{{ event.verification_source }}" class="underline" target="_blank" rel="noopener noreferrer">確認元の個別ページ ↗</a><br>変更が生じる場合があります。お出かけ前に最新の公式情報をご確認ください。</p>
+                {% endif %}
                 <dl class="space-y-4 text-sm">
                     <!-- Status -->
                     <div>
@@ -221,7 +225,7 @@
                         🌐 公式サイトを見る ↗
                     </a>
                     {% endif %}
-                    <a href="https://maps.google.com/?q={{ event.location }}" target="_blank" rel="noopener noreferrer" 
+                    <a href="{{ event.google_maps_url }}" target="_blank" rel="noopener noreferrer" 
                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-md transition-colors text-sm">
                         📍 Google Mapで位置を確認
                     </a>
@@ -238,6 +242,7 @@
 
 {% block scripts %}
 <script>
+    {% if event.lat and event.lng %}
     document.addEventListener('DOMContentLoaded', () => {
         const lat = {{ event.lat if event.lat else 34.9769 }};
         const lng = {{ event.lng if event.lng else 138.3831 }};
@@ -253,5 +258,6 @@
             .bindPopup(`<b>${title}</b><br><a href="https://maps.google.com/?q=${lat},${lng}" target="_blank">Google Mapで開く</a>`)
             .openPopup();
     });
+    {% endif %}
 </script>
 {% endblock %}
