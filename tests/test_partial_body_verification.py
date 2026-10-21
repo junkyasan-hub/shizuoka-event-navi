@@ -1,8 +1,8 @@
+from db_fixture import create_test_db
 """A rejected event must not block unrelated verified imports."""
 import copy
 import json
 from pathlib import Path
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -26,7 +26,7 @@ class PartialBodyTests(unittest.TestCase):
         events=self.events();client=Mock()
         client.models.generate_content.side_effect=self.responses(events)
         with tempfile.TemporaryDirectory() as tmp:
-            db=Path(tmp)/'events.db';shutil.copy2('events.db',db)
+            db=Path(tmp)/'events.db';create_test_db(db)
             report=Path(tmp)/'report.json';summary=Path(tmp)/'summary.md'
             with sqlite3.connect(db) as conn:before=conn.execute('SELECT * FROM events ORDER BY id').fetchall()
             with patch.object(collect_events,'collect',side_effect=lambda source,*args:events if source.city=='静岡市' else []),patch.object(

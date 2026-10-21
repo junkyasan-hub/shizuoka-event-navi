@@ -1,9 +1,9 @@
+from db_fixture import create_test_db
 import copy
 import contextlib
 import io
 import json
 from pathlib import Path
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -60,7 +60,7 @@ class CollectionTests(unittest.TestCase):
     def test_import_idempotency_updates_and_preserves_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'events.db'
-            shutil.copy2('events.db', path)
+            create_test_db(path)
             with sqlite3.connect(path) as conn:
                 count = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
                 event = self.event()
@@ -92,7 +92,7 @@ class CollectionTests(unittest.TestCase):
     def test_save_rolls_back_entire_import_on_later_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'events.db'
-            shutil.copy2('events.db', db)
+            create_test_db(db)
             with sqlite3.connect(db) as conn:
                 count = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
                 had_imports = conn.execute("SELECT name FROM sqlite_master WHERE name='event_imports'").fetchone() is not None
@@ -143,7 +143,7 @@ class CollectionTests(unittest.TestCase):
     def test_source_failure_no_writes_and_nonzero_exit(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'events.db'
-            shutil.copy2('events.db', db)
+            create_test_db(db)
             before = db.read_bytes()
             with patch.object(collect_events, 'collect', side_effect=RuntimeError('source down')):
                 self.assertEqual(collect_events.main(['--max-rechecks', '0', '--db', str(db), '--no-rewrite']), 1)
@@ -154,7 +154,7 @@ class CollectionTests(unittest.TestCase):
             db = Path(tmp) / 'events.db'
             report_path = Path(tmp) / 'report.json'
             summary_path = Path(tmp) / 'summary.md'
-            shutil.copy2('events.db', db)
+            create_test_db(db)
             with sqlite3.connect(db) as conn:
                 before = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
 
@@ -188,7 +188,7 @@ class CollectionTests(unittest.TestCase):
     def test_partial_mode_still_fails_when_all_sources_fail(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'events.db'
-            shutil.copy2('events.db', db)
+            create_test_db(db)
             before = db.read_bytes()
             with patch.object(collect_events, 'collect', side_effect=TimeoutError('timeout')):
                 self.assertEqual(collect_events.main(['--max-rechecks', '0', '--db', str(db), '--no-rewrite', '--allow-partial']), 1)
@@ -198,7 +198,7 @@ class CollectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'events.db'
             report_path = Path(tmp) / 'report.json'
-            shutil.copy2('events.db', db)
+            create_test_db(db)
             before = db.read_bytes()
 
             def collect_source(source, fetcher, limit):

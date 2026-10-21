@@ -1,3 +1,4 @@
+from db_fixture import create_test_db
 import json
 import sqlite3
 import tempfile
@@ -10,8 +11,7 @@ import generate_site
 class ManualTests(unittest.TestCase):
     def setUp(self):
         self.conn=sqlite3.connect(':memory:')
-        with sqlite3.connect('events.db') as source:
-            source.backup(self.conn)
+        create_test_db(self.conn)
         self.conn.row_factory=sqlite3.Row
         self.row=dict(self.conn.execute("SELECT * FROM events WHERE item_type='event' LIMIT 1").fetchone())
     def tearDown(self): self.conn.close()

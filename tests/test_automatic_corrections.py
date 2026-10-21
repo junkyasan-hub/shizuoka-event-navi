@@ -1,7 +1,7 @@
+from db_fixture import create_test_db
 import copy
 import json
 from pathlib import Path
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -16,7 +16,7 @@ from manual_events import apply, fingerprint
 class CorrectionTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.db=Path(self.temp.name)/'events.db'
-        shutil.copy2('events.db',self.db)
+        create_test_db(self.db)
         self.original=factual_event(SOURCES[1],'https://www.visit-shizuoka.com/event/detail_999997.html','自動訂正テスト','2099年10月18日','旧会場')
         with sqlite3.connect(self.db) as c:
             collect_events.save_events(c,[(self.original,None)],[{'summary':'2099年10月18日開催','description':'旧会場で開催。'}])

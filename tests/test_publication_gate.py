@@ -1,3 +1,4 @@
+from db_fixture import record
 import datetime as dt
 import json
 from pathlib import Path
@@ -11,7 +12,8 @@ import publication_gate as gate
 
 class PublicationGateTests(unittest.TestCase):
     def setUp(self):
-        self.reviews = json.loads(gate.MANIFEST.read_text())
+        sample=record(title='確認済みテストイベント')
+        self.reviews=[dict(record=sample,source_url=sample['official_url'],checked_on='2026-10-19')]
         self.conn = sqlite3.connect(':memory:')
         self.conn.execute('CREATE TABLE events (id INTEGER PRIMARY KEY,'+','.join(k+' TEXT' for k in gate.FIELDS)+')')
         self.rows = [dict(item['record'], id=i+1) for i,item in enumerate(self.reviews)]
@@ -56,7 +58,8 @@ class PublicationGateTests(unittest.TestCase):
                     conn.execute('INSERT INTO events VALUES('+','.join('?' for _ in range(len(gate.FIELDS)+1))+')',[row['id']]+[row[k] for k in gate.FIELDS])
             out=Path(tmp)/'dist';(out/'events').mkdir(parents=True)
             (out/'events'/'12345.html').write_text('OLD')
-            with patch.object(build,'DB_PATH',str(db)),patch.object(build,'OUTPUT_DIR',str(out)),patch.object(build,'EVENTS_OUTPUT_DIR',str(out/'events')),patch.object(gate,'reviews',return_value=self.reviews):
+            original_approval=gate.approved_rows
+            with patch.object(gate,'approved_rows',side_effect=lambda conn,rows: original_approval(conn,rows,self.today)),patch.object(build,'DB_PATH',str(db)),patch.object(build,'OUTPUT_DIR',str(out)),patch.object(build,'EVENTS_OUTPUT_DIR',str(out/'events')),patch.object(gate,'reviews',return_value=self.reviews):
                 build.generate_site()
             self.assertNotIn('裏付けのないイベント',(out/'index.html').read_text())
             self.assertIn('掲載情報を確認中',(out/'events'/'999.html').read_text())

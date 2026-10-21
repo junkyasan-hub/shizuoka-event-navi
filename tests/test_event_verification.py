@@ -1,7 +1,7 @@
+from db_fixture import create_test_db
 import copy
 import json
 from pathlib import Path
-import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -169,7 +169,7 @@ class VerificationTests(unittest.TestCase):
 
     def test_main_corrects_same_year_date_without_duplicating(self):
         with tempfile.TemporaryDirectory() as tmp:
-            db = Path(tmp) / 'events.db';shutil.copy2('events.db', db)
+            db = Path(tmp) / 'events.db';create_test_db(db)
             original = self.event()
             with sqlite3.connect(db) as conn:
                 collect_events.save_events(conn, [(original, None)], [{'summary': '案内', 'description': '説明'}])
@@ -195,7 +195,7 @@ class VerificationTests(unittest.TestCase):
 
     def test_main_does_not_save_bad_generated_body(self):
         with tempfile.TemporaryDirectory() as tmp:
-            db = Path(tmp) / 'events.db';shutil.copy2('events.db', db)
+            db = Path(tmp) / 'events.db';create_test_db(db)
             before = db.read_bytes();event = self.event()
             report_path = Path(tmp) / 'report.json'
             with patch.object(collect_events, 'collect', side_effect=lambda source, *args:
