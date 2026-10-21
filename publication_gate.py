@@ -40,10 +40,21 @@ def approved_rows(conn, rows, today=None):
         if item['source_url'] != item['record']['official_url']:
             continue
         approved[fingerprint(item['record'])] = item
+    automatic = {}
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='open_data_publication'").fetchone():
+        for key, ident, digest, fetched_at in conn.execute('SELECT source_key,event_id,record_hash,fetched_at FROM open_data_publication'):
+            try:
+                fetched = dt.datetime.fromisoformat(fetched_at)
+                checked = fetched.astimezone(ZoneInfo('Asia/Tokyo')).date()
+                prefix = 'https://static.hamamatsu.odpf.net/opendata/v01/221309_hamamatsu_event/221309_hamamatsu_event.csv#'
+                if fetched.tzinfo and key.startswith(prefix) and key[len(prefix):] and 0 <= (today-checked).days <= 7:
+                    automatic[(ident,digest)] = {'checked_on':checked.isoformat(),'source_url':key}
+            except (TypeError,ValueError):
+                continue
     result = []
     for row in rows:
         row = dict(row)
-        review = approved.get(fingerprint(row))
+        review = approved.get(fingerprint(row)) or automatic.get((row['id'],fingerprint(row)))
         if not review or hidden.get(row['id'], 0):
             continue
         row['verified_on'] = review['checked_on']
