@@ -1,4 +1,4 @@
-name: Automatic Event Data Collection, AI Rewrite & Deploy to StarServer
+name: Collect Municipal Open Data and Publish
 
 on:
   # 毎日 午前3時(JST) = 前日18:00 (UTC)
@@ -35,18 +35,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Crawler & AI Rewriter
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python collect_events.py --max-events 20 --allow-partial --output "$RUNNER_TEMP/collection-report.json"
+      - name: Collect and validate municipal open data (no AI)
+        run: python collect_open_data.py --backup "$RUNNER_TEMP/open-data-backup.db" --report "$RUNNER_TEMP/collection-report.json"
 
       - name: Import checked permanent restaurants
         run: python import_gourmet.py --backup "$RUNNER_TEMP/gourmet-backup/events.db"
@@ -94,6 +91,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: collection-report
-          path: ${{ runner.temp }}/collection-report.json
+          path: |
+            ${{ runner.temp }}/collection-report.json
+            ${{ runner.temp }}/open-data-backup.db
           if-no-files-found: ignore
 
