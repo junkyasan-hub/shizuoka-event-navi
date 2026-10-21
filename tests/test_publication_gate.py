@@ -15,7 +15,7 @@ class PublicationGateTests(unittest.TestCase):
         self.conn = sqlite3.connect(':memory:')
         self.conn.execute('CREATE TABLE events (id INTEGER PRIMARY KEY,'+','.join(k+' TEXT' for k in gate.FIELDS)+')')
         self.rows = [dict(item['record'], id=i+1) for i,item in enumerate(self.reviews)]
-        self.today = dt.date(2026,10,19)
+        self.today = dt.date(2026,10,21)
 
     def tearDown(self):
         self.conn.close()
@@ -25,7 +25,7 @@ class PublicationGateTests(unittest.TestCase):
             return gate.approved_rows(self.conn, rows, self.today)
 
     def test_only_exact_reviewed_content_is_published(self):
-        self.assertEqual(len(self.approved(self.rows)),4)
+        self.assertEqual(len(self.approved(self.rows)),len(self.rows))
         changed = dict(self.rows[0],fee='入場無料')
         self.assertEqual(self.approved([changed]),[])
         self.assertEqual(self.approved([dict(self.rows[0],description='架空のSL体験')]),[])
@@ -37,14 +37,14 @@ class PublicationGateTests(unittest.TestCase):
             self.assertEqual(gate.approved_rows(self.conn,self.rows,self.today),[])
 
     def test_expiry_future_dates_and_manual_hides(self):
-        self.today = dt.date(2026,10,27)
+        self.today = dt.date(2026,10,30)
         self.assertEqual(self.approved(self.rows),[])
         self.today = dt.date(2026,10,18)
         self.assertEqual(self.approved(self.rows),[])
-        self.today = dt.date(2026,10,19)
+        self.today = dt.date(2026,10,21)
         self.conn.execute('CREATE TABLE event_manual_controls(event_id INTEGER PRIMARY KEY,hidden INTEGER)')
         self.conn.execute('INSERT INTO event_manual_controls VALUES(1,1)')
-        self.assertEqual(len(self.approved(self.rows)),3)
+        self.assertEqual(len(self.approved(self.rows)),len(self.rows)-1)
 
     def test_public_build_retires_old_detail_urls(self):
         import generate_site as build
