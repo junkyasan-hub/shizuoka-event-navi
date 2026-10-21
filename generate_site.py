@@ -182,7 +182,7 @@ def enrich_item(item):
             "name": item["organizer"]
         }
 
-    item["json_ld"] = json.dumps(json_ld, ensure_ascii=False, indent=2)
+    item["json_ld"] = json.dumps(json_ld, ensure_ascii=False, indent=2).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     return item
 
 def extract_calendar_events(items):

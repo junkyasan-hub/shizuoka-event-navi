@@ -51,6 +51,18 @@ def approved_rows(conn, rows, today=None):
                     automatic[(ident,digest)] = {'checked_on':checked.isoformat(),'source_url':key}
             except (TypeError,ValueError):
                 continue
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='city_calendar_publication'").fetchone():
+        from urllib.parse import urlsplit
+        import re
+        for url, ident, digest, fetched_at in conn.execute('SELECT source_url,event_id,record_hash,fetched_at FROM city_calendar_publication'):
+            try:
+                fetched = dt.datetime.fromisoformat(fetched_at)
+                checked = fetched.astimezone(ZoneInfo('Asia/Tokyo')).date()
+                parts = urlsplit(url)
+                if fetched.tzinfo and parts.scheme == 'https' and parts.netloc == 'www.city.shizuoka.lg.jp' and re.fullmatch(r'/s\d+/s\d+\.html',parts.path) and not parts.query and not parts.fragment and 0 <= (today-checked).days <= 7:
+                    automatic[(ident,digest)] = {'checked_on':checked.isoformat(),'source_url':url}
+            except (TypeError,ValueError):
+                continue
     result = []
     for row in rows:
         row = dict(row)
